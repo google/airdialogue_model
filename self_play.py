@@ -18,6 +18,9 @@ import copy
 import os
 import random
 import time
+import json
+from tqdm import tqdm
+import math
 import numpy as np
 import tensorflow as tf
 import model as diag_model
@@ -42,6 +45,21 @@ def handle_summary(diag_mode, summary_writer, global_step, all_summary,
     combined[key] = np.average(combined[key], weights=summary_weight)
     name = diag_mode + '_' + key
     utils.add_summary(summary_writer, global_step, name, combined[key])
+
+
+def output_generated_data(generated_data, eval_out):
+  bs_intent, bs_pred_action, bs_truth_action, utt_arr, bs_kb = generated_data
+  for intent, pred_action, true_action, utterance, kb in zip(
+      bs_intent, bs_pred_action, bs_truth_action, utt_arr, bs_kb):
+    generated_obj = {
+        'intent': intent,
+        'pred_action': ' '.join(pred_action),
+        'action': true_action,
+        'utterance': ' '.join(utterance),
+        'kb': kb
+    }
+    # print ('generated_obj', generated_obj)
+    eval_out.write(json.dumps(generated_obj) + '\n')
 
 
 def single_worker_selfplay(mutable_model, immutable_model, mutable_sess,
@@ -74,7 +92,6 @@ def single_worker_selfplay(mutable_model, immutable_model, mutable_sess,
       hparams=hparams)
 
   batch_size = dialogue.self_play_eval_batch_size
-  print('batch_size', batch_size, 'len(selfplay_data)', len(selfplay_data))
   assert batch_size <= len(selfplay_data)
 
   loaded_mutable, _ = load_self_play_model(
@@ -93,33 +110,43 @@ def single_worker_selfplay(mutable_model, immutable_model, mutable_sess,
   # agent 2. The other way around when flip = 1.
   start_time = time.time()
   num_flips_for_initial_speaker = 2
-  for flip in range(num_flips_for_initial_speaker):
-    epoch = -1
-    i = len(selfplay_data)  # force shuffling at the beginning
-    agent1, agent2, _ = dialogue.flip_agent(
-        (loaded_mutable, mutable_sess, dialogue.mutable_handles),
-        (loaded_immutable, immutable_sess, dialogue.immutable_handles), flip)
-    # only eval one epoch
-    while epoch <= 0:
-      # print(i, max_eval_per_flip)
-      if i * batch_size >= len(selfplay_data):  # reacehd the end
-        input_data = zip(selfplay_data, selfplay_kb)
-        random.shuffle(input_data)  # random shuffle input data
-        i = 0
-        selfplay_data, selfplay_kb = zip(*input_data)
-        epoch += 1
-      start_ind = i * batch_size
-      end_ind = min(i * batch_size + batch_size, len(selfplay_data))
+  with tf.gfile.GFile(hparams.selfplay_eval_output_file, 'w') as selfplay_out:
+    for flip in range(num_flips_for_initial_speaker):
+      # epoch = -1
+      i = len(selfplay_data)  # force shuffling at the beginning
+      agent1, agent2, _ = dialogue.flip_agent(
+          (loaded_mutable, mutable_sess, dialogue.mutable_handles),
+          (loaded_immutable, immutable_sess, dialogue.immutable_handles), flip)
+      # only eval one epoch
+      # while epoch <= 0:
+        # print(i, max_eval_per_flip)
+      # if i * batch_size >= len(selfplay_data):  # reacehd the end
+      input_data = zip(selfplay_data, selfplay_kb)
+      # we don't shuffle in evaluation
+      # random.shuffle(input_data)  # random shuffle input data
+      # i = 0
+      selfplay_data, selfplay_kb = zip(*input_data)
+      # epoch += 1
+      ceil = int(math.ceil(len(selfplay_data) *1.0 / batch_size))
+      for i in tqdm(range(0, ceil)):
+        start_ind = i * batch_size
+        end_ind = min(i * batch_size + batch_size, len(selfplay_data))
 
-      batch_data = selfplay_data[start_ind:end_ind]
-      batch_kb = selfplay_kb[start_ind:end_ind]
-      _, _, summary = dialogue.talk(hparams.max_dialogue_len, batch_data,
-                                    batch_kb, agent1, agent2, worker_step)
-      all_summary.append(summary)
-      # number of elements processed
-      summary_weight.append(end_ind - start_ind)
-      worker_step += 1
-      i += batch_size
+        batch_data = selfplay_data[start_ind:end_ind]
+        batch_kb = selfplay_kb[start_ind:end_ind]
+        # we indicaet to let agent1 to talk first. Keep in mind that we will
+        # swap between agent1 and agent2.
+        speaker = flip % 2
+        generated_data, _, summary = dialogue.talk(hparams.max_dialogue_len,
+                                                   batch_data, batch_kb, agent1,
+                                                   agent2, worker_step,
+                                                   batch_size, speaker)
+        output_generated_data(generated_data, selfplay_out)
+        all_summary.append(summary)
+        # number of elements processed
+        summary_weight.append(end_ind - start_ind)
+        worker_step += 1
+        # i += batch_size
   handle_summary(dialogue_mode, summary_writer, global_step, all_summary,
                  summary_weight)
   end_time = time.time()
@@ -381,7 +408,8 @@ def multi_worker_selfplay(hparams,
           immutable_model, immutable_sess, 'immutable',
           hparams.self_play_pretrain_dir, hparams.out_dir)
       last_immmutable_model_reload = global_step
-    # b. possiblely flip between speakers (or roll out models), based on either a random policy or by step counts
+    # b. possiblely flip between speakers (or roll out models),
+    # based on either a random policy or by step counts
     agent1, agent2, mutable_agent_index = dialogue.flip_agent(
         (mutable_model, mutable_sess, dialogue.mutable_handles),
         (immutable_model, immutable_sess, dialogue.immutable_handles))
@@ -398,7 +426,8 @@ def multi_worker_selfplay(hparams,
     batch_data, batch_kb = selfplay_data[start_ind:end_ind], selfplay_kb[
         start_ind:end_ind]
     train_example, _, _ = dialogue.talk(hparams.max_dialogue_len, batch_data,
-                                        batch_kb, agent1, agent2, global_step)
+                                        batch_kb, agent1, agent2, batch_size,
+                                        global_step)
     possible_global_step = dialogue.maybe_train(
         train_example, mutable_agent_index, global_step, force=True)
     if possible_global_step:
@@ -418,7 +447,7 @@ def multi_worker_selfplay(hparams,
       utils.add_summary(summary_writer, global_step,
                         task_SP_DISTRIBUTED + '_' + 'train_ratio',
                         train_stats[0] * 1.0 / (train_stats[1] + 0.1))
-    i += batch_size
+    i += 1
 
   if is_chief:
     summary_writer.close()

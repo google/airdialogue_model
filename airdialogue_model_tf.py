@@ -328,7 +328,13 @@ def add_arguments(parser):
       type=str,
       default=None,
       help="""Output file for dialogue inference. If not set, it will be set to
-              inference_out.txt under variable out_dir.""")
+              inference_out.txt under out_dir.""")
+  parser.add_argument(
+      "--selfplay_eval_output_file",
+      type=str,
+      default=None,
+      help="""Output file for dialogue selfplay evaluation. If not set, it will be set to
+              selfplay_eval_out.txt under out_dir.""")
   parser.add_argument(
       "--eval_prefix",
       type=str,
@@ -597,6 +603,7 @@ def create_hparams(flags):
       # others
       debug=flags.debug,
       inference_output_file=flags.inference_output_file,
+      selfplay_eval_output_file=flags.selfplay_eval_output_file,
       task_type=flags.task_type,
       # self-play
       num_self_play_train_steps=flags.num_self_play_train_steps,
@@ -653,6 +660,10 @@ def process_input_path(hparams):
   if hparams.task_type == task_INFER and (not hparams.inference_output_file):
     hparams.inference_output_file = os.path.join(hparams.out_dir,
                                                  "inference_out.txt")
+  if hparams.task_type == task_SP_EVAL and (not hparams.selfplay_eval_output_file):
+    hparams.selfplay_eval_output_file = os.path.join(hparams.out_dir,
+                                                 "selfplay_eval_out.txt")
+
   # set flags for tensorboard on infer and selfplay eval tasks
   if (not hparams.identity) and hparams.task_type in [task_SP_EVAL, task_INFER]:
     mapping = {task_INFER: "infer", task_SP_EVAL: "selfplay"}
@@ -731,7 +742,7 @@ def ensure_compatible_hparams(hparams, default_hparams, hparams_path):
       "dev_infer_tar_data", "dev_infer_kb", "dev_self_play_eval_data",
       "dev_self_play_eval_kb", "test_infer_src_data", "test_infer_tar_data",
       "test_infer_kb", "test_self_play_eval_data", "test_self_play_eval_kb",
-      "eval_prefix", "eval_forever"
+      "eval_prefix", "eval_forever", "selfplay_eval_output_file"
   ]
   for key in updated_keys:
     if key in default_config and getattr(hparams, key) != default_config[key]:

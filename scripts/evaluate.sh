@@ -62,18 +62,23 @@ read -ra ADDR <<< "$additional_str"
 echo "out_dir", ${out_dir}
 echo "num_gpus", ${num_gpus}
 
-# # run in foreground once and display the results
+# run in foreground once and display the results
 python airdialogue_model_tf.py --task_type INFER --eval_prefix $partition --num_gpus $num_gpus \
-                        --input_dir ${input_dir} --out_dir ${out_dir}
+                        --input_dir ${input_dir} --out_dir ${out_dir} \
+                        --inference_output_file ${out_dir}/dev_inference_out.txt
 
 # run in foreground once and display the results
 python airdialogue_model_tf.py --task_type SP_EVAL --eval_prefix $partition --num_gpus $num_gpus \
-                        --input_dir ${input_dir} --self_play_pretrain_dir ${out_dir}
+                        --input_dir ${input_dir} --self_play_pretrain_dir ${out_dir} \
+                        --self_play_immutable_gpu --self_play_eval_batch_size 256 \
+                        --selfplay_eval_output_file ${out_dir}/dev_selfplay_out.txt
 
 # additional evaluation
 for task in ${ADDR[@]}
 do
   # run in foreground once and display the results
   python airdialogue_model_tf.py --task_type SP_EVAL --eval_prefix ${task} --num_gpus $num_gpus \
-                          --input_dir ${input_dir} --self_play_pretrain_dir ${out_dir}
+                          --input_dir ${input_dir} --self_play_pretrain_dir ${out_dir} \
+                          --self_play_immutable_gpu --self_play_eval_batch_size 256 \
+                          --selfplay_eval_output_file ${out_dir}/${task}_selfplay_out.txt
 done

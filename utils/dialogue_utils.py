@@ -18,11 +18,12 @@ import codecs
 import random
 import numpy as np
 import tensorflow as tf
+from tqdm import tqdm
 from airdialogue.evaluator.metrics import f1
 from airdialogue.evaluator.metrics.flight_distance import generate_scaled_flight
 from airdialogue.evaluator.metrics.flight_distance import split_flight
 
-from utils import evaluation_utils
+from airdialogue.evaluator import infer_utils
 from utils import misc_utils as utils
 from utils import vocab_utils
 
@@ -238,7 +239,7 @@ def decode_and_evaluate(name,
   evaluation_scores = {}
   if ref_file and tf.gfile.Exists(trans_file):
     for metric in metrics:
-      score = evaluation_utils.evaluate(ref_file, trans_file, metric)
+      score = infer_utils.evaluate(ref_file, trans_file, metric)
       evaluation_scores[metric] = score
       utils.print_out('  %s %s: %.1f' % (metric, name, score))
 

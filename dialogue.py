@@ -142,7 +142,7 @@ class SelfplayDialogue(object):
 
     self.summary_writer = summary_writer
     self.dialogue_mode = dialogue_mode
-    self.batch_size = hparams.self_play_batch_size
+    # self.batch_size = hparams.self_play_batch_size
     self.self_play_eval_batch_size = hparams.self_play_eval_batch_size
     self.update_batch_size = hparams.self_play_update_batch_size
     self.hparams = hparams
@@ -173,9 +173,10 @@ class SelfplayDialogue(object):
                            batch_utterance,
                            batch_reward_diag,
                            batch_reward_action,
+                           batch_size,
                            boundary=None):
     output_data = []
-    for i in range(self.batch_size):
+    for i in range(batch_size):
       utterance = ' '.join(batch_utterance[i])
       if not boundary:
         boundary1 = self.get_dialogue_boundary(self.turn_tokens[0], utterance,
@@ -197,7 +198,7 @@ class SelfplayDialogue(object):
     return output_data
 
   def generate_utterance_ordinary(self, data, kb, self_play_model, sess,
-                                  handles):
+                                  batch_size, handles):
 
     if self.iterator_mode == 1:
       real_iterator = self_play_model.self_play_ft_iterator
@@ -209,7 +210,7 @@ class SelfplayDialogue(object):
         feed_dict={
             self_play_model.data_placeholder: data,
             self_play_model.kb_placeholder: kb,
-            self_play_model.batch_size_placeholder: self.batch_size
+            self_play_model.batch_size_placeholder: batch_size
         })
 
     iterator_handle = handles[self.iterator_mode]
@@ -218,20 +219,21 @@ class SelfplayDialogue(object):
     return res
 
   def generate_utterance(self, batch_intent, conv, kb,
-                         speaker, turn):
+                         speaker, turn, batch_size):
     # preapre output
     utt = conv.get_train_data()
     composit_data = self.format_samples_batch(
         batch_intent=batch_intent,
-        batch_pred_action=['s'] * self.batch_size,
-        batch_truth_action=['s'] * self.batch_size,
+        batch_pred_action=['s'] * batch_size,
+        batch_truth_action=['s'] * batch_size,
         batch_utterance=utt[0],  # utterance
-        batch_reward_diag=['0.5'] * self.batch_size,
-        batch_reward_action=['0.5'] * self.batch_size)
+        batch_reward_diag=['0.5'] * batch_size,
+        batch_reward_action=['0.5'] * batch_size,
+        batch_size=batch_size)
     composit_kb = kb
     self_play_model, sess, handles = self.agents[speaker]
     new_utt1, new_utt2, new_action = self.generate_utterance_ordinary(
-        composit_data, composit_kb, self_play_model, sess, handles)
+        composit_data, composit_kb, self_play_model, sess, batch_size, handles)
     all_finished = conv.process(new_utt1, new_utt2, new_action, speaker,
                                 turn == self.max_dialogue_turns - 1)
     return all_finished
@@ -337,6 +339,7 @@ class SelfplayDialogue(object):
       i = get_next_start_token(i + 1, start_token, splitted_dialogue)
     return (all_starts, all_ends)
 
+
   def scale_reward_batch(self, b_final_reward, gamma, b_diag):
     batch_reward_diag = []
     batch_reward_action = []
@@ -352,6 +355,7 @@ class SelfplayDialogue(object):
       batch_reward_diag.append(' '.join(reward_diag))
       batch_reward_action.append(' '.join(reward_action))
     return batch_reward_diag, batch_reward_action
+
 
   def maybe_train(self, sample, speaker, global_step, force=False):
     self.train_samples.append(sample)
@@ -378,7 +382,8 @@ class SelfplayDialogue(object):
             batch_truth_action=truth_action,
             batch_utterance=utterance,
             batch_reward_diag=reward_diag,
-            batch_reward_action=reward_action)
+            batch_reward_action=reward_action,
+            batch_size=self.update_batch_size)
         data_arr.extend(new_data_arr)
         kb_arr.extend(kb)
       data_output, kb_output = data_arr, kb_arr
@@ -418,18 +423,21 @@ class SelfplayDialogue(object):
     return None
 
   def talk(self, max_diag_length, batch_input_data, batch_input_kb, agent1,
-           agent2, worker_step):
+           agent2, worker_step, batch_size, speaker=None):
     """The main procedure to generate a single self play conversation."""
     # parse data
     bs_intent, bs_truth_action, bs_kb = self.parse_input(
         batch_input_data, batch_input_kb)
     # remember the roles of agents
     self.agents = [agent1, agent2]
-    # randomly chose an initial speaker and initialize utterance
-    speaker = int(np.random.random() < 0.5)
+    # In selfplay training the speaker will be non and we randomly chose an
+    # initial speaker and initialize utterance.
+    # In selfplay evaluation the speaker will be specified so we use as is
+    if not speaker: speaker = int(np.random.random() < 0.5)
     # generate the conversation instance for this conversation.
+    # print ('self.batch_size', self.batch_size)
     conv = Conversation(max_diag_length, self.turn1_token, self.turn2_token,
-                        self.batch_size, speaker)
+                        batch_size, speaker)
 
     # generate conversation by turn in batch mode until all conversations
     # terminated (finished = True) or the number of turns reached the maximum.
@@ -437,7 +445,7 @@ class SelfplayDialogue(object):
     finished = False
     while (not finished) and turn < self.max_dialogue_turns:
       finished = self.generate_utterance(bs_intent, conv,
-                                         bs_kb, speaker, turn)
+                                         bs_kb, speaker, turn, batch_size)
       #  Change the speaker as we move to the next turn.
       speaker = (speaker + 1) % 2
       turn += 1

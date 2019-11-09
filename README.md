@@ -65,6 +65,27 @@ bash ./scripts/evaluate.sh -p dev -a ood1
 ## 5. Scoring
 Once the predictative files are generated, we will depend on the [AirDialogue tookit][airdialogue] for scoring.
 We are currently working on the scoring script.
+```
+airdialogue score --pred_data ./data/out_dir/dev_inference_out.txt \
+                  --true_data ./data/airdialogue/tokenlized/dev.infer.tar.data \
+                  --true_kb ./data/airdialogue/tokenlized/dev.infer.kb \
+                  --task infer \
+                  --output ./data/out_dir/dev_bleu.json
+```
+```
+airdialogue score --pred_data ./data/out_dir/dev_selfplay_out.txt \
+                  --true_data ./data/airdialogue/tokenlized/dev.selfplay.eval.data \
+                  --true_kb ./data/airdialogue/tokenlized/dev.selfplay.eval.kb \
+                  --task selfplay \
+                  --output ./data/out_dir/dev_selfplay.json
+```
+```
+airdialogue score --pred_data ./data/out_dir/ood1_selfplay_out.txt \
+                  --true_data ./data/airdialogue/tokenlized/ood1.selfplay.eval.data \
+                  --true_kb ./data/airdialogue/tokenlized/ood1.selfplay.eval.kb \
+                  --task selfplay \
+                  --output ./data/out_dir/ood1_selfplay.json
+```
 
 ## 6. Evaluating on the AirDialogue test set
 We are currently working on the evalaution process of the test set.
@@ -128,7 +149,29 @@ bash ./scripts/preprocess.sh -p dev --ood1
 ```
 We can run execute the evalution script on the synthesized dev set.
 ```
-bash ./scripts/evaluate.sh -p dev -a ood1 -m ./data/synthesized_selfplay_out_dir
+bash ./scripts/evaluate.sh -p dev -a ood1 -m ./data/synthesized_out_dir
+```
+###### Scoring
+```
+airdialogue score --pred_data ./data/synthesized_out_dir/dev_inference_out.txt \
+                  --true_data ./data/synthesized/tokenlized/dev.infer.tar.data \
+                  --true_kb ./data/airdialogue/tokenlized/dev.infer.kb \
+                  --task infer \
+                  --output ./data/synthesized_out_dir/dev_bleu.json
+```
+```
+airdialogue score --pred_data ./data/synthesized_out_dir/dev_selfplay_out.txt \
+                  --true_data ./data/synthesized/tokenlized/dev.selfplay.eval.data \
+                  --true_kb ./data/airdialogue/tokenlized/dev.selfplay.eval.kb \
+                  --task selfplay \
+                  --output ./data/synthesized_out_dir/dev_selfplay.json
+```
+```
+airdialogue score --pred_data ./data/synthesized_out_dir/ood1_selfplay_out.txt \
+                  --true_data ./data/synthesized/tokenlized/ood1.selfplay.eval.data \
+                  --true_kb ./data/airdialogue/tokenlized/ood1.selfplay.eval.kb \
+                  --task selfplay \
+                  --output ./data/synthesized_out_dir/ood1_selfplay.json
 ```
 One can repeat same steps for synthesized test set as well. Please refer to the [AirDialogue paper][paper] for the results on the synthesized dataset.
 
