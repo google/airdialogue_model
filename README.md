@@ -145,11 +145,11 @@ python airdialogue_model_tf.py --task_type SP_DISTRIBUTED --num_gpus 8 \
 Before testing on the dev data, we will need to do preprocessing.
 Dev Dataset
 ```
-bash ./scripts/preprocess.sh -p dev --ood1
+bash ./scripts/preprocess.sh -p dev --ood1 -s
 ```
 We can run execute the evalution script on the synthesized dev set.
 ```
-bash ./scripts/evaluate.sh -p dev -a ood1 -m ./data/synthesized_out_dir
+bash ./scripts/evaluate.sh -p dev -a ood1 -m ./data/synthesized_out_dir -i ./data/synthesized/tokenlized/
 ```
 ###### Scoring
 ```
