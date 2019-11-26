@@ -36,7 +36,7 @@ FLAGS = None
 
 
 def add_arguments(parser):
-  """Add argumentsf rom the parser."""
+  """Add argumentsf from the parser."""
   parser.register("type", "bool", lambda v: v.lower() == "true")
 
   # evaluation
@@ -803,7 +803,6 @@ def load_hparams(flags, default_hparams, save_hparams):
   hparams = create_or_load_hparams(
       load_dir, default_hparams, flags.hparams_path, save_hparams=save_hparams)
   return hparams
-
 
 def main_simple(unused_argv):
   flags = FLAGS

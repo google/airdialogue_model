@@ -16,13 +16,18 @@
 set -e # stop script when there is an error
 
 # 1. download airdialogue data
+wget https://storage.googleapis.com/airdialogue/airdialogue_data.tar.gz
 
 # 2. extract airdialogue data and put it into model directory
-tar -xzvf ~/airdialogue_data.tar.gz -C ~/
+tar -xzvf airdialogue_data.tar.gz
 mkdir -p ./data/airdialogue/json/
-mv ~/airdialogue_data/airdialogue/* ./data/airdialogue/json/
-mv ~/airdialogue_data/resources ./data/
-rm -rf ~/airdialogue_data
+mv ./airdialogue_data/airdialogue/* ./data/airdialogue/json/
+
+mkdir -p ./data/resources/
+mv ./airdialogue_data/resources/* ./data/resources
+
+rm -rf ./airdialogue_data
+rm -rf ./airdialogue_data.tar.gz
 
 # 3. download nltk data
 python -m nltk.downloader -d ./data/nltk punkt

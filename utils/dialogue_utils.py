@@ -18,7 +18,6 @@ import codecs
 import random
 import numpy as np
 import tensorflow as tf
-from tqdm import tqdm
 from airdialogue.evaluator.metrics import f1
 from airdialogue.evaluator.metrics.flight_distance import generate_scaled_flight
 from airdialogue.evaluator.metrics.flight_distance import split_flight
