@@ -1,7 +1,7 @@
 # AirDialogue Model
 - Official implementations of the [AirDialogue paper][paper]
 - Codebase developed bsaed on the [AirDialogue tookit][airdialogue]
-- Replicating results by using the AirDialogue dataset, or the [synthesized dataset](#markdown-header-working-with-synthesized-dataset)
+- Replicating results by using the [AirDialogue dataset][data], or the [synthesized dataset](#markdown-header-working-with-synthesized-dataset)
 
 ## Prerequisites
 #### General
@@ -175,5 +175,6 @@ airdialogue score --pred_data ./data/synthesized_out_dir/ood1_selfplay_out.txt \
 ```
 One can repeat same steps for synthesized test set as well. Please refer to the [AirDialogue paper][paper] for the results on the synthesized dataset.
 
+[data]: https://storage.googleapis.com/airdialogue/airdialogue_data.tar.gz
 [paper]: https://www.aclweb.org/anthology/D18-1419/
 [airdialogue]: https://github.com/google/airdialogue
