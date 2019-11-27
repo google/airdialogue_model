@@ -33,7 +33,7 @@ bash ./scripts/preprocess.sh -p train
 The fist step is to train our model using supervised learning.
 ```
 python airdialogue_model_tf.py --task_type TRAINEVAL --num_gpus 8 \
-                            --input_dir ./data/airdialogue/tokenlized \
+                            --input_dir ./data/airdialogue/tokenized \
                             --out_dir ./data/out_dir \
                             --num_units 256 --num_layers 2
 ```
@@ -41,7 +41,7 @@ python airdialogue_model_tf.py --task_type TRAINEVAL --num_gpus 8 \
 The second step would be to train our model using self-play based on our supervised learning checkpoint.
 ```
 python airdialogue_model_tf.py --task_type SP_DISTRIBUTED --num_gpus 8 \
-                            --input_dir ./data/airdialogue/tokenlized \
+                            --input_dir ./data/airdialogue/tokenized \
                             --self_play_pretrain_dir ./data/out_dir \
                             --out_dir ./data/selfplay_out_dir
 ```
@@ -67,22 +67,22 @@ Once the predictative files are generated, we will depend on the [AirDialogue to
 We are currently working on the scoring script.
 ```
 airdialogue score --pred_data ./data/out_dir/dev_inference_out.txt \
-                  --true_data ./data/airdialogue/tokenlized/dev.infer.tar.data \
-                  --true_kb ./data/airdialogue/tokenlized/dev.infer.kb \
+                  --true_data ./data/airdialogue/tokenized/dev.infer.tar.data \
+                  --true_kb ./data/airdialogue/tokenized/dev.infer.kb \
                   --task infer \
                   --output ./data/out_dir/dev_bleu.json
 ```
 ```
 airdialogue score --pred_data ./data/out_dir/dev_selfplay_out.txt \
-                  --true_data ./data/airdialogue/tokenlized/dev.selfplay.eval.data \
-                  --true_kb ./data/airdialogue/tokenlized/dev.selfplay.eval.kb \
+                  --true_data ./data/airdialogue/tokenized/dev.selfplay.eval.data \
+                  --true_kb ./data/airdialogue/tokenized/dev.selfplay.eval.kb \
                   --task selfplay \
                   --output ./data/out_dir/dev_selfplay.json
 ```
 ```
 airdialogue score --pred_data ./data/out_dir/ood1_selfplay_out.txt \
-                  --true_data ./data/airdialogue/tokenlized/ood1.selfplay.eval.data \
-                  --true_kb ./data/airdialogue/tokenlized/ood1.selfplay.eval.kb \
+                  --true_data ./data/airdialogue/tokenized/ood1.selfplay.eval.data \
+                  --true_kb ./data/airdialogue/tokenized/ood1.selfplay.eval.kb \
                   --task selfplay \
                   --output ./data/out_dir/ood1_selfplay.json
 ```
@@ -129,7 +129,7 @@ bash ./scripts/preprocess.sh -s -p train
 Similar to experiments on the AirDialogue dataset, we can train a supervised model for the synthesized data:
 ```
 python airdialogue_model_tf.py --task_type TRAINEVAL --num_gpus 8 \
-                            --input_dir ./data/synthesized/tokenlized \
+                            --input_dir ./data/synthesized/tokenized \
                             --out_dir ./data/synthesized_out_dir \
                             --num_units 256 --num_layers 2
 
@@ -137,7 +137,7 @@ python airdialogue_model_tf.py --task_type TRAINEVAL --num_gpus 8 \
 With supervised model pre-training, we can also train the synthesized model using self-play:
 ```
 python airdialogue_model_tf.py --task_type SP_DISTRIBUTED --num_gpus 8 \
-                            --input_dir ./data/synthesized/tokenlized \
+                            --input_dir ./data/synthesized/tokenized \
                             --self_play_pretrain_dir ./data/synthesized_out_dir \
                             --out_dir ./data/synthesized_selfplay_out_dir
 ```
@@ -154,22 +154,22 @@ bash ./scripts/evaluate.sh -p dev -a ood1 -m ./data/synthesized_out_dir
 ###### Scoring
 ```
 airdialogue score --pred_data ./data/synthesized_out_dir/dev_inference_out.txt \
-                  --true_data ./data/synthesized/tokenlized/dev.infer.tar.data \
-                  --true_kb ./data/airdialogue/tokenlized/dev.infer.kb \
+                  --true_data ./data/synthesized/tokenized/dev.infer.tar.data \
+                  --true_kb ./data/airdialogue/tokenized/dev.infer.kb \
                   --task infer \
                   --output ./data/synthesized_out_dir/dev_bleu.json
 ```
 ```
 airdialogue score --pred_data ./data/synthesized_out_dir/dev_selfplay_out.txt \
-                  --true_data ./data/synthesized/tokenlized/dev.selfplay.eval.data \
-                  --true_kb ./data/airdialogue/tokenlized/dev.selfplay.eval.kb \
+                  --true_data ./data/synthesized/tokenized/dev.selfplay.eval.data \
+                  --true_kb ./data/airdialogue/tokenized/dev.selfplay.eval.kb \
                   --task selfplay \
                   --output ./data/synthesized_out_dir/dev_selfplay.json
 ```
 ```
 airdialogue score --pred_data ./data/synthesized_out_dir/ood1_selfplay_out.txt \
-                  --true_data ./data/synthesized/tokenlized/ood1.selfplay.eval.data \
-                  --true_kb ./data/airdialogue/tokenlized/ood1.selfplay.eval.kb \
+                  --true_data ./data/synthesized/tokenized/ood1.selfplay.eval.data \
+                  --true_kb ./data/airdialogue/tokenized/ood1.selfplay.eval.kb \
                   --task selfplay \
                   --output ./data/synthesized_out_dir/ood1_selfplay.json
 ```

@@ -63,11 +63,11 @@ echo "data path = ${data_path}"
 echo "partition = ${partition}"
 
 json_path="${data_path}/json"
-tokenlized_path="${data_path}/tokenlized"
+tokenized_path="${data_path}/tokenized"
 # create directory if not already exist
-mkdir -p $tokenlized_path
+mkdir -p $tokenized_path
 echo "json path = ${json_path}"
-echo "tokenlized path = ${tokenlized_path}"
+echo "tokenized path = ${tokenized_path}"
 read -ra ADDS <<< "$additional_str"
 
 
@@ -89,7 +89,7 @@ echo "Tokenlizing ${partition} data..."
 airdialogue prepro \
   --data_file "${json_path}/${partition}_data.json" \
   --kb_file "${json_path}/${partition}_kb.json" \
-  --output_dir "${tokenlized_path}" \
+  --output_dir "${tokenized_path}" \
   --output_prefix ${partition} --job_type ${job_type_str} --input_type dialogue \
   --nltk_data ${nltk_data} --word_cutoff ${cutoff_flag} \
   $gen_voc_flag
@@ -100,7 +100,7 @@ if [[ $partition = "train" ]]; then
   airdialogue prepro \
     --data_file "${json_path}/selfplay_train_data.json" \
     --kb_file "${json_path}/selfplay_train_kb.json" \
-    --output_dir "${tokenlized_path}" \
+    --output_dir "${tokenized_path}" \
     --output_prefix 'train' --job_type '0|0|0|1|0' --input_type context
 fi
 
@@ -113,6 +113,6 @@ for i in "${ADDS[@]}"; do
   airdialogue prepro \
     --data_file "${json_path}/${i}_data.json" \
     --kb_file "${json_path}/${i}_kb.json" \
-    --output_dir "${tokenlized_path}" \
+    --output_dir "${tokenized_path}" \
     --output_prefix "${i}" --job_type '0|0|0|0|1' --input_type context
 done

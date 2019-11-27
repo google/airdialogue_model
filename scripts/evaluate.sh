@@ -51,7 +51,7 @@ done
 
 num_gpus=${num_gpus:-1} # by default use one gpu
 background=${background:-"False"}
-input_dir=${input_dir:-"./data/airdialogue/tokenlized"}
+input_dir=${input_dir:-"./data/airdialogue/tokenized"}
 if [ -d "./data/selfplay_out_dir" ]; then
   default_dir="./data/selfplay_out_dir"
 else
