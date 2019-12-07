@@ -651,12 +651,13 @@ def process_input_path(hparams):
           hparams.input_dir, hparams.eval_prefix + ".infer.tar.data")
       hparams.infer_kb = os.path.join(hparams.input_dir,
                                       hparams.eval_prefix + ".infer.kb")
-    if not (hparams.self_play_eval_data and hparams.self_play_eval_kb):
-      assert hparams.input_dir
-      hparams.self_play_eval_data = os.path.join(
-          hparams.input_dir, hparams.eval_prefix + ".selfplay.eval.data")
-      hparams.self_play_eval_kb = os.path.join(
-          hparams.input_dir, hparams.eval_prefix + ".selfplay.eval.kb")
+    if hparams.task_type in [task_SP_EVAL]:
+        if not (hparams.self_play_eval_data and hparams.self_play_eval_kb):
+            assert hparams.input_dir
+            hparams.self_play_eval_data = os.path.join(
+                hparams.input_dir, hparams.eval_prefix + ".selfplay.eval.data")
+            hparams.self_play_eval_kb = os.path.join(
+                hparams.input_dir, hparams.eval_prefix + ".selfplay.eval.kb")
   if hparams.task_type == task_INFER and (not hparams.inference_output_file):
     hparams.inference_output_file = os.path.join(hparams.out_dir,
                                                  "inference_out.txt")

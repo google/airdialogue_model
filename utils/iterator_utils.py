@@ -51,15 +51,15 @@ def process_entry_common(intent, action, dialogue, boundaries, kb, vocab_table,
   """A common procedure to process each entry of the dialogue data."""
 
   def do_process_boundary(start_points, end_points, input_length,
-                          t1_id, t2_id, all_tokenlized_diag):
+                          t1_id, t2_id, all_tokenized_diag):
     """function that contains the majority of the logic to proess boundary."""
     masks_start = tf.sequence_mask(start_points, input_length)
     masks_end = tf.sequence_mask(end_points, input_length)
     xor_masks = tf.logical_xor(masks_start, masks_end)
     mask1 = tf.reduce_any(xor_masks, axis=0)
     mask2 = tf.logical_not(mask1)
-    all_turn1 = tf.equal(all_tokenlized_diag, t1_id)
-    all_turn2 = tf.equal(all_tokenlized_diag, t2_id)
+    all_turn1 = tf.equal(all_tokenized_diag, t1_id)
+    all_turn2 = tf.equal(all_tokenized_diag, t2_id)
     turn_point = tf.logical_or(all_turn1, all_turn2)
     turn_point = tf.cast(turn_point, dtype=tf.float32)
     return mask1, mask2, turn_point
