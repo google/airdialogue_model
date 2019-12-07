@@ -21,8 +21,8 @@ import tensorflow as tf
 from airdialogue.evaluator.metrics import f1
 from airdialogue.evaluator.metrics.flight_distance import generate_scaled_flight
 from airdialogue.evaluator.metrics.flight_distance import split_flight
-
 from airdialogue.evaluator import infer_utils
+
 from utils import misc_utils as utils
 from utils import vocab_utils
 
