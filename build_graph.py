@@ -572,6 +572,7 @@ def _compute_loss(model, logits1, logits2, logits3):
 
   probs = tf.nn.softmax(logits3, -1)  # bs, len_action, vocab
   predictions = tf.argmax(probs, axis=2)  # bs, len_action, 1
+
   predictions = tf.reshape(predictions,
                            [tf.shape(predictions)[0], model.hparams.len_action])
   action = model.iterator.action
