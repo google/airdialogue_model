@@ -19,13 +19,13 @@ import collections
 import logging
 import re
 import time
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+from tf.python.ops import lookup_ops
 from rnn_decoder.multi_rnn import MultiRNNCell
 from utils import dialogue_utils
 from utils import iterator_utils
 from utils import misc_utils as utils
 from utils import vocab_utils
-from tensorflow.python.ops import lookup_ops
 
 
 def get_initializer(init_op, seed=None, init_weight=None):

@@ -18,7 +18,7 @@ from __future__ import print_function
 import math
 import sys
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from utils import dialogue_utils
 from utils import misc_utils as utils
 
@@ -142,7 +142,7 @@ class SelfplayDialogue(object):
 
     self.summary_writer = summary_writer
     self.dialogue_mode = dialogue_mode
-    self.batch_size = hparams.self_play_batch_size
+    # self.batch_size = hparams.self_play_batch_size
     self.self_play_eval_batch_size = hparams.self_play_eval_batch_size
     self.update_batch_size = hparams.self_play_update_batch_size
     self.hparams = hparams
@@ -475,7 +475,7 @@ class SelfplayDialogue(object):
   def flip_agent(self, mutable_agent, immutable_agent, flip='random'):
     """This function flips the role of mutable agent and immutable agent so that
 
-    they both have chances to play customer and agent. Remember both mutable
+    they both have chanes to play customer and agent. Remember both mutable
     immutable models actually contain two sub-models: customer and agent. We
     need to make sure that they have equal chances to serve as both parts when
     doing the self play. In self play evaluation, this is chosen

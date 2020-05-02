@@ -17,11 +17,11 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from tensorflow.python.framework import ops
-from tensorflow.python.ops import array_ops
-from tensorflow.python.ops import variable_scope as vs
-from tensorflow.python.ops.rnn_cell_impl import RNNCell
-from tensorflow.python.util import nest
+from tensorflow.compat.v1.python.framework import ops
+from tensorflow.compat.v1.python.ops import array_ops
+from tensorflow.compat.v1.python.ops import variable_scope as vs
+from tensorflow.compat.v1.python.ops.rnn_cell_impl import RNNCell
+from tensorflow.compat.v1.python.util import nest
 
 
 class MultiRNNCell(RNNCell):

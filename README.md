@@ -1,7 +1,8 @@
+
 # AirDialogue Model
 - Official implementations of the [AirDialogue paper][paper]
 - Codebase developed bsaed on the [AirDialogue tookit][airdialogue]
-- Replicating results by using the AirDialogue dataset, or the [synthesized dataset](#markdown-header-working-with-synthesized-dataset)
+- Replicating results by using the [AirDialogue dataset][data], or the [synthesized dataset](#markdown-header-working-with-synthesized-dataset)
 
 ## Prerequisites
 #### General
@@ -145,11 +146,11 @@ python airdialogue_model_tf.py --task_type SP_DISTRIBUTED --num_gpus 8 \
 Before testing on the dev data, we will need to do preprocessing.
 Dev Dataset
 ```
-bash ./scripts/preprocess.sh -p dev --ood1
+bash ./scripts/preprocess.sh -p dev --ood1 -s
 ```
 We can run execute the evalution script on the synthesized dev set.
 ```
-bash ./scripts/evaluate.sh -p dev -a ood1 -m ./data/synthesized_out_dir
+bash ./scripts/evaluate.sh -p dev -a ood1 -m ./data/synthesized_out_dir -o ./data/synthesized_out_dir -i ./data/synthesized/tokenized/
 ```
 ###### Scoring
 ```
@@ -175,5 +176,6 @@ airdialogue score --pred_data ./data/synthesized_out_dir/ood1_selfplay_out.txt \
 ```
 One can repeat same steps for synthesized test set as well. Please refer to the [AirDialogue paper][paper] for the results on the synthesized dataset.
 
+[data]: https://storage.googleapis.com/airdialogue/airdialogue_data.tar.gz
 [paper]: https://www.aclweb.org/anthology/D18-1419/
 [airdialogue]: https://github.com/google/airdialogue

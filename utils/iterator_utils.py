@@ -21,7 +21,7 @@ training/evaluation tasks.
 from __future__ import print_function
 import collections
 from functools import partial
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 # len_action = 3
 class BatchedInput(

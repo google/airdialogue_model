@@ -23,7 +23,7 @@ import os
 import sys
 import time
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 
 def safe_exp(value):

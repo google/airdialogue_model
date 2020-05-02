@@ -22,13 +22,13 @@ import abc
 import six
 
 from tensorflow.contrib.seq2seq.python.ops import decoder
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import ops
-from tensorflow.python.ops import array_ops
-from tensorflow.python.ops import control_flow_ops
-from tensorflow.python.ops import math_ops
-from tensorflow.python.ops import tensor_array_ops
-from tensorflow.python.util import nest
+from tensorflow.compat.v1.python.framework import dtypes
+from tensorflow.compat.v1.python.framework import ops
+from tensorflow.compat.v1.python.ops import array_ops
+from tensorflow.compat.v1.python.ops import control_flow_ops
+from tensorflow.compat.v1.python.ops import math_ops
+from tensorflow.compat.v1.python.ops import tensor_array_ops
+from tensorflow.compat.v1.python.util import nest
 
 
 _transpose_batch_time = decoder._transpose_batch_time  # pylint: disable=protected-access
