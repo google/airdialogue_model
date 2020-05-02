@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """Generally useful utility functions."""
-from __future__ import print_function
+
 
 import codecs
 import collections
@@ -150,7 +150,7 @@ def print_current_dialogue(words1, words2, mask1, mask2):
     else:
       mk = mask2
     mk = mk[0]
-    for i in xrange(len(mk)):
+    for i in range(len(mk)):
       if mk[i] == 0:
         infer[i] = "*"
 
@@ -164,7 +164,7 @@ def print_current_dialogue(words1, words2, mask1, mask2):
     else:
       mk = mask2
     mk = mk[0]
-    for i in xrange(len(mk)):
+    for i in range(len(mk)):
       if mk[i] == 0:
         infer[i] = "*"
 

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """Utility functions specifically for airdialogue model."""
-from __future__ import print_function
+
 import codecs
 import random
 import numpy as np
@@ -261,6 +261,7 @@ def get_translation(nmt_outputs, sent_id, tgt_eos):
   # Select a sentence
   output = nmt_outputs[sent_id, :].tolist()
   if tgt_eos and tgt_eos in output:
+    tgt_eos = str.encode(tgt_eos)
     output = output[:output.index(tgt_eos)]
   translation = utils.format_text(output)
   return translation
@@ -271,8 +272,10 @@ def get_translation_cut_both(nmt_outputs, sent_id, start_token, end_token):
   # Select a sentence
   output = nmt_outputs[sent_id, :].tolist()
   if start_token and start_token in output:
+    start_token = str.encode(start_token)
     output = output[:output.index(start_token)]
   if end_token and end_token in output:
+    end_token = str.encode(end_token)
     output = output[:output.index(end_token)]
 
   translation = utils.format_text(output)
@@ -320,6 +323,8 @@ def _sample_decode(model, global_step, iterator_handle, sess, hparams,
   src_dialogue = src
   tar_dialogue = sample_tar_data[decode_id].split('|')[-1]
   utils.print_out('    src: %s' % src_dialogue)
-  utils.print_out('    ref: %s' % tar_dialogue)
-  utils.print_out(b'    ours: ' + translation + ' (speaker' + str(speaker) +
+  if sample_tar_data:
+    tar_dialogue = sample_tar_data[decode_id].split('|')[-1]
+    utils.print_out('    ref: %s' % tar_dialogue)
+  utils.print_out('    ours: ' + str(translation) + ' (speaker' + str(speaker) +
                   ')')

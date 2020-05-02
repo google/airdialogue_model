@@ -14,7 +14,7 @@
 
 """This file is the main entry for the airdialogue model."""
 
-from __future__ import print_function
+
 import argparse
 from functools import partial
 import os

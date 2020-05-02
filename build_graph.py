@@ -13,11 +13,7 @@
 # limitations under the License.
 
 """procedures to build graph."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import tensorflow.compat.v1 as tf
-
 import model_helper
 from rnn_decoder import basic_decoder
 from rnn_decoder import helper as help_py

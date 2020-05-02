@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """Predict the next sentence given a partial human dialogue."""
-from __future__ import print_function
+
 import os
 import time
 import tensorflow.compat.v1 as tf

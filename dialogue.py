@@ -14,7 +14,7 @@
 
 """The conversation module used for self play."""
 
-from __future__ import print_function
+
 import math
 import sys
 import numpy as np
@@ -309,14 +309,14 @@ class SelfplayDialogue(object):
                             start_of_turn2):
 
     def get_end_token(start, set_of_end_tokens, splitted_dialogues):
-      for i in xrange(start, len(splitted_dialogues)):
+      for i in range(start, len(splitted_dialogues)):
         if splitted_dialogues[i] in set_of_end_tokens:
           return i
       assert False, 'end token not found :' + ' start=' + str(
           start) + '/' + str(len(splitted_dialogues))
 
     def get_next_start_token(end_position, start_token, splitted_dialogues):
-      for i in xrange(end_position, len(splitted_dialogues)):
+      for i in range(end_position, len(splitted_dialogues)):
         if splitted_dialogues[i] == start_token:
           return i
       return len(splitted_dialogues)
@@ -346,7 +346,7 @@ class SelfplayDialogue(object):
     for final_reward, diag in zip(b_final_reward, b_diag):
       diag_len = len(diag)
       reward_len = diag_len + self.hparams.len_action
-      all_ind = range(reward_len - 1, -1, -1)
+      all_ind = list(range(reward_len - 1, -1, -1))
       all_rewards = []
       for i in range(len(all_ind)):
         all_rewards.append(str(math.pow(gamma, all_ind[i]) * final_reward))

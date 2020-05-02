@@ -14,9 +14,6 @@
 
 """this class is changed so that outputs of all LSTM layers are recorded not just the last one."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 from tensorflow.compat.v1.python.framework import ops
 from tensorflow.compat.v1.python.ops import array_ops
 from tensorflow.compat.v1.python.ops import variable_scope as vs
