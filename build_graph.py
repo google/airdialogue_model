@@ -16,14 +16,14 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+
 import model_helper
 from rnn_decoder import basic_decoder
 from rnn_decoder import helper as help_py
 from utils import dialogue_utils
 from utils import misc_utils as utils
 from utils import vocab_utils
-from tensorflow.python.layers import core as layers_core
 
 
 def _build_encoder_cell(model,
@@ -456,7 +456,7 @@ def build_graph(model, hparams, scope=None):
       _, encoder_state2_aux, _ = res
 
     with tf.variable_scope("encoder1"):
-      model.encoder_input_projection1 = layers_core.Dense(
+      model.encoder_input_projection1 = tf.layers.Dense(
           hparams.num_units, use_bias=False, name="encoder_1_input_projection")
       tiled_encoder_state1_aux = tf.reshape(
           encoder_state1_aux,
@@ -471,7 +471,7 @@ def build_graph(model, hparams, scope=None):
           model, encoder1_input, hparams)  # 1= customer, 2= agent
 
     with tf.variable_scope("encoder2"):
-      model.encoder_input_projection2 = layers_core.Dense(
+      model.encoder_input_projection2 = tf.layers.Dense(
           hparams.num_units, use_bias=False, name="encoder_2_input_projection")
       tiled_encoder_state2_aux = tf.reshape(
           encoder_state2_aux, [model.batch_size, 1, hparams.encoder_kb_unit])
@@ -572,6 +572,7 @@ def _compute_loss(model, logits1, logits2, logits3):
 
   probs = tf.nn.softmax(logits3, -1)  # bs, len_action, vocab
   predictions = tf.argmax(probs, axis=2)  # bs, len_action, 1
+
   predictions = tf.reshape(predictions,
                            [tf.shape(predictions)[0], model.hparams.len_action])
   action = model.iterator.action

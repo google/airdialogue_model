@@ -17,13 +17,12 @@ from __future__ import print_function
 import codecs
 import random
 import numpy as np
-import tensorflow as tf
-from tqdm import tqdm
+import tensorflow.compat.v1 as tf
 from airdialogue.evaluator.metrics import f1
 from airdialogue.evaluator.metrics.flight_distance import generate_scaled_flight
 from airdialogue.evaluator.metrics.flight_distance import split_flight
-
 from airdialogue.evaluator import infer_utils
+
 from utils import misc_utils as utils
 from utils import vocab_utils
 
@@ -319,9 +318,8 @@ def _sample_decode(model, global_step, iterator_handle, sess, hparams,
       sent_id=0,  # there is only one sentence because batch size is 1
       tgt_eos=None)
   src_dialogue = src
+  tar_dialogue = sample_tar_data[decode_id].split('|')[-1]
   utils.print_out('    src: %s' % src_dialogue)
-  if sample_tar_data:
-    tar_dialogue = sample_tar_data[decode_id].split('|')[-1]
-    utils.print_out('    ref: %s' % tar_dialogue)
+  utils.print_out('    ref: %s' % tar_dialogue)
   utils.print_out(b'    ours: ' + translation + ' (speaker' + str(speaker) +
                   ')')

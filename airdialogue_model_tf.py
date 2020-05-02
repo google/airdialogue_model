@@ -21,7 +21,7 @@ import os
 import random
 import sys
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import inference
 import self_play
 import train
@@ -36,7 +36,7 @@ FLAGS = None
 
 
 def add_arguments(parser):
-  """Add argumentsf rom the parser."""
+  """Add argumentsf from the parser."""
   parser.register("type", "bool", lambda v: v.lower() == "true")
 
   # evaluation
@@ -303,12 +303,6 @@ def add_arguments(parser):
       type=str,
       default=None,
       help="dialogue data target for inference")
-  parser.add_argument(
-      "--codalab",
-      action="store_true",
-      help="""Indicates if working with Codalab workflow. Generally decreases
-        unecessary steps (like self inference scoring)"""
-  )
   parser.add_argument(
       "--infer_kb",
       type=str,
@@ -611,7 +605,6 @@ def create_hparams(flags):
       inference_output_file=flags.inference_output_file,
       selfplay_eval_output_file=flags.selfplay_eval_output_file,
       task_type=flags.task_type,
-      codalab=flags.codalab,
       # self-play
       num_self_play_train_steps=flags.num_self_play_train_steps,
       immutable_model_reload_freq=flags.immutable_model_reload_freq,
@@ -634,42 +627,37 @@ def process_input_path(hparams):
   # if input_dir is set, we ignore individual pathes to input files
   if hparams.input_dir:
     # train
-    if not hparams.train_data:
-      hparams.train_data = os.path.join(hparams.input_dir, "train.data")
-    if not hparams.train_kb:
-      hparams.train_kb = os.path.join(hparams.input_dir, "train.kb")
-    if not hparams.self_play_train_data:
-      hparams.self_play_train_data = os.path.join(hparams.input_dir,
+    hparams.train_data = os.path.join(hparams.input_dir, "train.data")
+    hparams.train_kb = os.path.join(hparams.input_dir, "train.kb")
+    hparams.self_play_train_data = os.path.join(hparams.input_dir,
                                                 "train.selfplay.data")
-    if not hparams.self_play_train_kb:
-      hparams.self_play_train_kb = os.path.join(hparams.input_dir,
+    hparams.self_play_train_kb = os.path.join(hparams.input_dir,
                                               "train.selfplay.kb")
     # dev
-    if not hparams.dev_data:
-      hparams.dev_data = os.path.join(hparams.input_dir, "dev.eval.data")
-    if not hparams.dev_kb:
-      hparams.dev_kb = os.path.join(hparams.input_dir, "dev.eval.kb")
-    if not hparams.vocab_file:
-      hparams.vocab_file = os.path.join(hparams.input_dir, "vocab.txt")
+    hparams.dev_data = os.path.join(hparams.input_dir, "dev.eval.data")
+    hparams.dev_kb = os.path.join(hparams.input_dir, "dev.eval.kb")
+    hparams.vocab_file = os.path.join(hparams.input_dir, "vocab.txt")
 
-    if hparams.task_type == task_INFER:
-      if not hparams.infer_src_data:
-        hparams.infer_src_data = os.path.join(
+  if hparams.task_type in [task_INFER, task_SP_EVAL]:
+    # In infer or self-play training or self-play eval model, if the inference
+    # and evaluatoin files are not properly set, we will choose them based
+    # on eval_dataset.
+    if not (hparams.infer_src_data and hparams.infer_tar_data and
+            hparams.infer_kb):
+      assert hparams.input_dir
+      hparams.infer_src_data = os.path.join(
           hparams.input_dir, hparams.eval_prefix + ".infer.src.data")
-      if not hparams.infer_tar_data:
-        hparams.infer_tar_data = os.path.join(
+      hparams.infer_tar_data = os.path.join(
           hparams.input_dir, hparams.eval_prefix + ".infer.tar.data")
-      if not hparams.infer_kb:
-        hparams.infer_kb = os.path.join(hparams.input_dir,
-                                  hparams.eval_prefix + ".infer.kb")
-    if hparams.task_type == task_SP_EVAL:
-      if not (hparams.self_play_eval_data and hparams.self_play_eval_kb):
-        hparams.self_play_eval_data = os.path.join(
-          hparams.input_dir, hparams.eval_prefix + ".selfplay.eval.data")
-        hparams.self_play_eval_kb = os.path.join(
-          hparams.input_dir, hparams.eval_prefix + ".selfplay.eval.kb")
-  if hparams.codalab:
-    hparams.infer_tar_data = None
+      hparams.infer_kb = os.path.join(hparams.input_dir,
+                                      hparams.eval_prefix + ".infer.kb")
+    if hparams.task_type in [task_SP_EVAL]:
+        if not (hparams.self_play_eval_data and hparams.self_play_eval_kb):
+            assert hparams.input_dir
+            hparams.self_play_eval_data = os.path.join(
+                hparams.input_dir, hparams.eval_prefix + ".selfplay.eval.data")
+            hparams.self_play_eval_kb = os.path.join(
+                hparams.input_dir, hparams.eval_prefix + ".selfplay.eval.kb")
   if hparams.task_type == task_INFER and (not hparams.inference_output_file):
     hparams.inference_output_file = os.path.join(hparams.out_dir,
                                                  "inference_out.txt")
@@ -744,7 +732,7 @@ def ensure_compatible_hparams(hparams, default_hparams, hparams_path):
       "vocab_file", "max_dialogue_len", "max_inference_len",
       "num_kb_fields_per_entry", "len_action", "self_play_model_dir",
       "max_dialogue_turns", "train_threadhold", "reward_discount",
-      "do_selfplay",  "self_play_batch_size", "self_play_update_batch_size",
+      "do_selfplay", "self_play_batch_size", "self_play_update_batch_size",
       "self_play_eval_batch_size", "inference_output_file", "task_type",
       "self_play_pretrain_dir", "learning_rate", "colocate_gradients_with_ops",
       "immutable_model_reload_freq", "optimizer", "self_play_loss_method",
@@ -755,8 +743,7 @@ def ensure_compatible_hparams(hparams, default_hparams, hparams_path):
       "dev_infer_tar_data", "dev_infer_kb", "dev_self_play_eval_data",
       "dev_self_play_eval_kb", "test_infer_src_data", "test_infer_tar_data",
       "test_infer_kb", "test_self_play_eval_data", "test_self_play_eval_kb",
-      "eval_prefix", "eval_forever", "selfplay_eval_output_file",
-      "num_self_play_train_steps"
+      "eval_prefix", "eval_forever", "selfplay_eval_output_file"
   ]
   for key in updated_keys:
     if key in default_config and getattr(hparams, key) != default_config[key]:
@@ -817,7 +804,6 @@ def load_hparams(flags, default_hparams, save_hparams):
   hparams = create_or_load_hparams(
       load_dir, default_hparams, flags.hparams_path, save_hparams=save_hparams)
   return hparams
-
 
 def main_simple(unused_argv):
   flags = FLAGS

@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """This module contains a modified version of tensorflow basic decoder for AirDialogue."""
 from __future__ import absolute_import
 from __future__ import division
@@ -19,16 +18,13 @@ from __future__ import print_function
 
 import collections
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
-from tensorflow.contrib.seq2seq.python.ops import decoder
+from tf.contrib.seq2seq.python.ops import decoder
 
-from tensorflow.python.framework import dtypes
-from tensorflow.python.framework import ops
-from tensorflow.python.framework import tensor_shape
-from tensorflow.python.layers import base as layers_base
-from tensorflow.python.ops import rnn_cell_impl
-from tensorflow.python.util import nest
+from tf.python.layers import base as layers_base
+from tf.python.ops import rnn_cell_impl
+from tf.python.util import nest
 
 from rnn_decoder import helper as helper_py
 
@@ -59,9 +55,10 @@ class BasicDecoder(decoder.Decoder):
       encoder_outputs: the output of the encoder
       turn_points: points where conversations switch party
       output_layer: (Optional) An instance of `tf.layers.Layer`, i.e.,
-        `tf.layers.Dense`.  Optional layer to apply to the RNN output prior
-        to storing the result or sampling.
+        `tf.layers.Dense`.  Optional layer to apply to the RNN output prior to
+        storing the result or sampling.
       aux_hidden_state: hidden embeddings of context information
+
     Raises:
       TypeError: if `cell`, `helper` or `output_layer` have an incorrect type.
     """
@@ -70,8 +67,8 @@ class BasicDecoder(decoder.Decoder):
       raise TypeError("helper must be a Helper, received: %s" % type(helper))
     if (output_layer is not None and
         not isinstance(output_layer, layers_base.Layer)):
-      raise TypeError(
-          "output_layer must be a Layer, received: %s" % type(output_layer))
+      raise TypeError("output_layer must be a Layer, received: %s" %
+                      type(output_layer))
     self._cell = cell
     self._helper = helper
     self._initial_state = initial_state
@@ -96,7 +93,7 @@ class BasicDecoder(decoder.Decoder):
       # dimensions to get the output size of the rnn with the layer
       # applied to the top.
       output_shape_with_unknown_batch = nest.map_structure(
-          lambda s: tensor_shape.TensorShape([None]).concatenate(s), size)
+          lambda s: tf.TensorShape([None]).concatenate(s), size)
       layer_output_shape = self._output_layer.compute_output_shape(  # pylint: disable=protected-access
           output_shape_with_unknown_batch)
       return nest.map_structure(lambda s: s[1:], layer_output_shape)
@@ -106,7 +103,7 @@ class BasicDecoder(decoder.Decoder):
     # Return the cell output and the id
     return BasicDecoderOutput(
         rnn_output=self._rnn_output_size(),
-        sample_id=tensor_shape.TensorShape([]))
+        sample_id=tf.TensorShape([]))
 
   @property
   def output_dtype(self):
@@ -116,13 +113,14 @@ class BasicDecoder(decoder.Decoder):
     dtype = nest.flatten(self._initial_state)[0].dtype
     return BasicDecoderOutput(
         nest.map_structure(lambda _: dtype, self._rnn_output_size()),
-        dtypes.int32)
+        tf.int32)
 
   def initialize(self, name=None):
     """Initialize the decoder.
 
     Args:
       name: Name scope for any created operations.
+
     Returns:
       `(finished, first_inputs, initial_state)`.
     """
@@ -136,10 +134,11 @@ class BasicDecoder(decoder.Decoder):
       inputs: A (structure of) input tensors.
       state: A (structure of) state tensors and TensorArrays.
       name: Name scope for any created operations.
+
     Returns:
       `(outputs, next_state, next_inputs, finished)`.
     """
-    with ops.name_scope(name, "BasicDecoderStep", (time, inputs, state)):
+    with tf.name_scope(name, "BasicDecoderStep", (time, inputs, state)):
       if isinstance(state, tuple):
         bs = tf.shape(state[0])[0]
         embs = tf.shape(state[0])[1]

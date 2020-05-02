@@ -16,13 +16,13 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+from tf.python.layers import core as layers_core
 import model_helper
 from build_graph import build_graph
 from utils import dialogue_utils
 from utils import iterator_utils
 from utils import misc_utils as utils
-from tensorflow.python.layers import core as layers_core
 
 
 class Model(object):

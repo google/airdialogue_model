@@ -22,7 +22,7 @@ import json
 from tqdm import tqdm
 import math
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import model as diag_model
 import model_helper
 from dialogue import SelfplayDialogue
@@ -111,6 +111,7 @@ def single_worker_selfplay(mutable_model, immutable_model, mutable_sess,
   start_time = time.time()
   num_flips_for_initial_speaker = 2
   with tf.gfile.GFile(hparams.selfplay_eval_output_file, 'w') as selfplay_out:
+    print ('flip 1')
     for flip in range(num_flips_for_initial_speaker):
       # epoch = -1
       i = len(selfplay_data)  # force shuffling at the beginning
@@ -150,6 +151,7 @@ def single_worker_selfplay(mutable_model, immutable_model, mutable_sess,
   handle_summary(dialogue_mode, summary_writer, global_step, all_summary,
                  summary_weight)
   end_time = time.time()
+  print ('finished')
   utils.add_summary(summary_writer, global_step, dialogue_mode + '_time',
                     end_time - start_time)  #  step wise summary
 
@@ -249,6 +251,7 @@ def self_play_eval_fn(hparams,
       # if eval_forever is disabled, we will do one selfplay evalation
       # otherwise, we will wait until certain number of timesteps are elapsed.
       last_external_eval_step = global_step
+      print ('do single worker evaluation')
       single_worker_selfplay(mutable_model, immutable_model, mutable_sess,
                              immutable_sess, hparams.self_play_eval_data,
                              hparams.self_play_eval_kb, global_step, hparams,
@@ -367,7 +370,7 @@ def multi_worker_selfplay(hparams,
 
   # save first model
   if is_chief:
-    print('saving the first checkpoint to', hparams.out_dir)
+    print('saveing the first checkpoint to', hparams.out_dir)
     mutable_model.model.saver.save(
         mutable_sess,
         os.path.join(hparams.out_dir, 'dialogue.ckpt'),
@@ -416,7 +419,7 @@ def multi_worker_selfplay(hparams,
     train_stats[mutable_agent_index] += 1
     # read selfplay data
     start_time = time.time()
-    if i * batch_size + batch_size > len(selfplay_data):  # reached the end
+    if i * batch_size + batch_size > len(selfplay_data):  # reacehd the end
       input_data = zip(selfplay_data, selfplay_kb)
       random.shuffle(input_data)  # random shuffle input data
       i = 0
@@ -426,8 +429,8 @@ def multi_worker_selfplay(hparams,
     batch_data, batch_kb = selfplay_data[start_ind:end_ind], selfplay_kb[
         start_ind:end_ind]
     train_example, _, _ = dialogue.talk(hparams.max_dialogue_len, batch_data,
-                                        batch_kb, agent1, agent2, global_step,
-                                        batch_size)
+                                        batch_kb, agent1, agent2, batch_size,
+                                        global_step)
     possible_global_step = dialogue.maybe_train(
         train_example, mutable_agent_index, global_step, force=True)
     if possible_global_step:

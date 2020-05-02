@@ -17,7 +17,7 @@ from __future__ import print_function
 import math
 import os
 import time
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import model as diag_model
 import model_helper
 from utils import misc_utils as utils
