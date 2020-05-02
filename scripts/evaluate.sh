@@ -51,7 +51,7 @@ done
 
 num_gpus=${num_gpus:-1} # by default use one gpu
 background=${background:-"False"}
-input_dir=${input_dir:-"./data/airdialogue/tokenlized"}
+input_dir=${input_dir:-"./data/airdialogue/tokenized"}
 if [ -d "./data/selfplay_out_dir" ]; then
   default_dir="./data/selfplay_out_dir"
 else
@@ -68,17 +68,17 @@ python airdialogue_model_tf.py --task_type INFER --eval_prefix $partition --num_
                         --inference_output_file ${out_dir}/dev_inference_out.txt
 
 # run in foreground once and display the results
-python airdialogue_model_tf.py --task_type SP_EVAL --eval_prefix $partition --num_gpus $num_gpus \
-                        --input_dir ${input_dir} --self_play_pretrain_dir ${out_dir} \
-                        --self_play_immutable_gpu --self_play_eval_batch_size 256 \
-                        --selfplay_eval_output_file ${out_dir}/dev_selfplay_out.txt
+# python airdialogue_model_tf.py --task_type SP_EVAL --eval_prefix $partition --num_gpus $num_gpus \
+#                         --input_dir ${input_dir} --self_play_pretrain_dir ${out_dir} \
+#                         --self_play_immutable_gpu --self_play_eval_batch_size 256 \
+#                         --selfplay_eval_output_file ${out_dir}/dev_selfplay_out.txt
 
-# additional evaluation
-for task in ${ADDR[@]}
-do
-  # run in foreground once and display the results
-  python airdialogue_model_tf.py --task_type SP_EVAL --eval_prefix ${task} --num_gpus $num_gpus \
-                          --input_dir ${input_dir} --self_play_pretrain_dir ${out_dir} \
-                          --self_play_immutable_gpu --self_play_eval_batch_size 256 \
-                          --selfplay_eval_output_file ${out_dir}/${task}_selfplay_out.txt
-done
+# # additional evaluation
+# for task in ${ADDR[@]}
+# do
+#   # run in foreground once and display the results
+#   python airdialogue_model_tf.py --task_type SP_EVAL --eval_prefix ${task} --num_gpus $num_gpus \
+#                           --input_dir ${input_dir} --self_play_pretrain_dir ${out_dir} \
+#                           --self_play_immutable_gpu --self_play_eval_batch_size 256 \
+#                           --selfplay_eval_output_file ${out_dir}/${task}_selfplay_out.txt
+# done
