@@ -13,9 +13,6 @@
 # limitations under the License.
 
 """Main module for the dialogue generation model."""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 import tensorflow.compat.v1 as tf
 from tf.python.layers import core as layers_core
 import model_helper
@@ -187,7 +184,7 @@ class Model(object):
           gradients, max_gradient_norm=hparams.max_gradient_norm)
 
       self.update = opt.apply_gradients(
-          zip(clipped_gradients, params),
+          list(zip(clipped_gradients, params)),
           global_step=self.global_step,
           name="adam_apply_gradients")
 
@@ -251,19 +248,19 @@ class Model(object):
                                              ["dynamic_seq2seq/encoder2_kb"])
       encoder_intent_params = self.patial_params(
           params, ["dynamic_seq2seq/encoder1_intent"])
-      print("val1_params", "\n".join(map(lambda a: a.name, val1_params)))
-      print("val2_params", "\n".join(map(lambda a: a.name, val2_params)))
+      print("val1_params", "\n".join([a.name for a in val1_params]))
+      print("val2_params", "\n".join([a.name for a in val2_params]))
       print("embedding_params", "\n".join(
-          map(lambda a: a.name, embedding_params)))
+          [a.name for a in embedding_params]))
       print("main_dec_enc_params1", "\n".join(
-          map(lambda a: a.name, main_dec_enc_params1)))
+          [a.name for a in main_dec_enc_params1]))
       print("main_dec_enc_params2", "\n".join(
-          map(lambda a: a.name, main_dec_enc_params2)))
-      print("action_params", "\n".join(map(lambda a: a.name, action_params)))
+          [a.name for a in main_dec_enc_params2]))
+      print("action_params", "\n".join([a.name for a in action_params]))
       print("encoder_kb_params", "\n".join(
-          map(lambda a: a.name, encoder_kb_params)))
+          [a.name for a in encoder_kb_params]))
       print("encoder_intent_params", "\n".join(
-          map(lambda a: a.name, encoder_intent_params)))
+          [a.name for a in encoder_intent_params]))
       self.optimizer_vl1, self.v1_sum = self.generate_optimizer(
           self.vl1, params, "vl1", self.learning_rate2,
           self.hparams.max_gradient_norm2)
@@ -325,7 +322,7 @@ class Model(object):
         gradients, max_gradient_norm=max_gradient_norm)
 
     update = opt.apply_gradients(
-        zip(clipped_gradients, params), global_step=self.global_step, name=name)
+        list(zip(clipped_gradients, params)), global_step=self.global_step, name=name)
 
     return update, gradient_norm_summary
 

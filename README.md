@@ -18,7 +18,7 @@ AirDialogue dataset and its meta data can be downloaded using our download scrip
 ```
 bash ./scripts/download.sh
 ```
-We will also generate a set of synthesized context pairs for self-play training. These context pairs contain initial conditions and the optiaml decisions of the synthesized dialogue. Additionally, here we also generate the Out-of-domain evaluation set (OOD1). See the [AirDialogue paper][paper] for more details.
+We will also generate a set of synthesized context pairs for self-play training. These context pairs contain initial conditions and the optimal decisions of the synthesized dialogue. Additionally, here we also generate the Out-of-domain evaluation set (OOD1). See the [AirDialogue paper][paper] for more details.
 
 ```
 bash ./scripts/gen_syn.sh --ood1
@@ -69,6 +69,7 @@ We are currently working on the scoring script.
 ```
 airdialogue score --pred_data ./data/out_dir/dev_inference_out.txt \
                   --true_data ./data/airdialogue/tokenized/dev.infer.tar.data \
+                  --true_kb ./data/airdialogue/tokenized/dev.infer.kb \
                   --task infer \
                   --output ./data/out_dir/dev_bleu.json
 ```

@@ -18,7 +18,7 @@ inference and self play tasks while get_iterator applies to supervised
 training/evaluation tasks.
 """
 
-from __future__ import print_function
+
 import collections
 from functools import partial
 import tensorflow.compat.v1 as tf

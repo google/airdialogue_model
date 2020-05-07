@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """To perform inference on test set given a trained model."""
-from __future__ import print_function
+
 import copy
 import os
 import random
@@ -122,14 +122,14 @@ def single_worker_selfplay(mutable_model, immutable_model, mutable_sess,
       # while epoch <= 0:
         # print(i, max_eval_per_flip)
       # if i * batch_size >= len(selfplay_data):  # reacehd the end
-      input_data = zip(selfplay_data, selfplay_kb)
+      input_data = list(zip(selfplay_data, selfplay_kb))
       # we don't shuffle in evaluation
       # random.shuffle(input_data)  # random shuffle input data
       # i = 0
-      selfplay_data, selfplay_kb = zip(*input_data)
+      selfplay_data, selfplay_kb = list(zip(*input_data))
       # epoch += 1
       ceil = int(math.ceil(len(selfplay_data) *1.0 / batch_size))
-      for i in tqdm(range(0, ceil)):
+      for i in tqdm(list(range(0, ceil))):
         start_ind = i * batch_size
         end_ind = min(i * batch_size + batch_size, len(selfplay_data))
 
@@ -419,11 +419,11 @@ def multi_worker_selfplay(hparams,
     train_stats[mutable_agent_index] += 1
     # read selfplay data
     start_time = time.time()
-    if i * batch_size + batch_size > len(selfplay_data):  # reacehd the end
-      input_data = zip(selfplay_data, selfplay_kb)
+    if i * batch_size + batch_size > len(selfplay_data):  # reached the end
+      input_data = list(zip(selfplay_data, selfplay_kb))
       random.shuffle(input_data)  # random shuffle input data
       i = 0
-      selfplay_data, selfplay_kb = zip(*input_data)
+      selfplay_data, selfplay_kb = list(zip(*input_data))
 
     start_ind, end_ind = i * batch_size, i * batch_size + batch_size
     batch_data, batch_kb = selfplay_data[start_ind:end_ind], selfplay_kb[

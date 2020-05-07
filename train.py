@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """train the dialogue model."""
-from __future__ import print_function
+
 import math
 import os
 import time

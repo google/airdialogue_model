@@ -14,9 +14,9 @@
 
 """Utility to handle vocabularies."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+
+
+
 
 import codecs
 import tensorflow.compat.v1 as tf

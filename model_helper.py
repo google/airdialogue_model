@@ -14,7 +14,7 @@
 
 """Utility functions for building models."""
 
-from __future__ import print_function
+
 import collections
 import logging
 import re
@@ -557,7 +557,7 @@ def get_variables_available_in_checkpoint(variables,
   # It seems the restore does something smart about partitioned variables.
   # Should keep it as a list instead of using partitioned variable keys.
   if isinstance(variables, list):
-    return vars_in_ckpt.values()
+    return list(vars_in_ckpt.values())
   return vars_in_ckpt
 
 
