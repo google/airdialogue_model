@@ -1,16 +1,16 @@
 
 # AirDialogue Model
 - Official implementations of the [AirDialogue paper][paper]
-- Codebase developed bsaed on the [AirDialogue tookit][airdialogue]
+- Codebase developed based on the [AirDialogue tookit][airdialogue]
 - Replicating results by using the [AirDialogue dataset][data], or the [synthesized dataset](#markdown-header-working-with-synthesized-dataset)
 
 ## Prerequisites
 #### General
-- python (verified on 2.7.16)
+- python (verified on 3.7)
 - wget
 
 #### Python Packages
-- tensorflow (verified on 1.14.0)
+- tensorflow (verified on 1.15.0)
 - airdialogue
 
 ## 1. Prepare Dataset

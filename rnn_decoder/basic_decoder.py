@@ -18,13 +18,11 @@
 
 import collections
 
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 
-from tf.contrib.seq2seq.python.ops import decoder
+from tensorflow.contrib.seq2seq import Decoder
 
-from tf.python.layers import base as layers_base
-from tf.python.ops import rnn_cell_impl
-from tf.python.util import nest
+from tensorflow.layers import Layer
 
 from rnn_decoder import helper as helper_py
 
@@ -34,7 +32,7 @@ class BasicDecoderOutput(
   pass
 
 
-class BasicDecoder(decoder.Decoder):
+class BasicDecoder(Decoder):
   """Basic sampling decoder."""
 
   def __init__(self,
@@ -62,11 +60,10 @@ class BasicDecoder(decoder.Decoder):
     Raises:
       TypeError: if `cell`, `helper` or `output_layer` have an incorrect type.
     """
-    rnn_cell_impl.assert_like_rnncell("", cell)
     if not isinstance(helper, helper_py.Helper):
       raise TypeError("helper must be a Helper, received: %s" % type(helper))
     if (output_layer is not None and
-        not isinstance(output_layer, layers_base.Layer)):
+        not isinstance(output_layer, Layer)):
       raise TypeError("output_layer must be a Layer, received: %s" %
                       type(output_layer))
     self._cell = cell
@@ -92,11 +89,11 @@ class BasicDecoder(decoder.Decoder):
       # compute_output_shape and read off all but the first (batch)
       # dimensions to get the output size of the rnn with the layer
       # applied to the top.
-      output_shape_with_unknown_batch = nest.map_structure(
+      output_shape_with_unknown_batch = tf.nest.map_structure(
           lambda s: tf.TensorShape([None]).concatenate(s), size)
       layer_output_shape = self._output_layer.compute_output_shape(  # pylint: disable=protected-access
           output_shape_with_unknown_batch)
-      return nest.map_structure(lambda s: s[1:], layer_output_shape)
+      return tf.nest.map_structure(lambda s: s[1:], layer_output_shape)
 
   @property
   def output_size(self):
@@ -110,9 +107,9 @@ class BasicDecoder(decoder.Decoder):
     # Assume the dtype of the cell is the output_size structure
     # containing the input_state's first component's dtype.
     # Return that structure and int32 (the id)
-    dtype = nest.flatten(self._initial_state)[0].dtype
+    dtype = tf.nest.flatten(self._initial_state)[0].dtype
     return BasicDecoderOutput(
-        nest.map_structure(lambda _: dtype, self._rnn_output_size()),
+        tf.nest.map_structure(lambda _: dtype, self._rnn_output_size()),
         tf.int32)
 
   def initialize(self, name=None):

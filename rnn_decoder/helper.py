@@ -14,29 +14,18 @@
 
 """this file contains helper."""
 
-
-
-
 import abc
-
 import six
 
-from tensorflow.contrib.seq2seq.python.ops import decoder
-from tensorflow.compat.v1.python.framework import dtypes
-from tensorflow.compat.v1.python.framework import ops
-from tensorflow.compat.v1.python.ops import array_ops
-from tensorflow.compat.v1.python.ops import control_flow_ops
-from tensorflow.compat.v1.python.ops import math_ops
-from tensorflow.compat.v1.python.ops import tensor_array_ops
-from tensorflow.compat.v1.python.util import nest
+from tensorflow.contrib.rnn import transpose_batch_time
 
-
-_transpose_batch_time = decoder._transpose_batch_time  # pylint: disable=protected-access
+import tensorflow.compat.v1 as tf
+from tensorflow.compat.v1 import nest
 
 
 def _unstack_ta(inp):
-  return tensor_array_ops.TensorArray(
-      dtype=inp.dtype, size=array_ops.shape(inp)[0],
+  return tf.TensorArray(
+      dtype=inp.dtype, size=tf.shape(inp)[0],
       element_shape=inp.get_shape()[1:]).unstack(inp)
 
 
@@ -87,13 +76,13 @@ class TrainingHelper(Helper):
     Raises:
       ValueError: if `sequence_length` is not a 1D tensor.
     """
-    with ops.name_scope(name, "TrainingHelper", [inputs, sequence_length]):
-      inputs = ops.convert_to_tensor(inputs, name="inputs")
+    with tf.name_scope(name, "TrainingHelper", [inputs, sequence_length]):
+      inputs = tf.convert_to_tensor(inputs, name="inputs")
       if not time_major:
-        inputs = nest.map_structure(_transpose_batch_time, inputs)
+        inputs = nest.map_structure(transpose_batch_time, inputs)
 
       self._input_tas = nest.map_structure(_unstack_ta, inputs)
-      self._sequence_length = ops.convert_to_tensor(
+      self._sequence_length = tf.convert_to_tensor(
           sequence_length, name="sequence_length")
       if self._sequence_length.get_shape().ndims != 1:
         raise ValueError(
@@ -101,37 +90,37 @@ class TrainingHelper(Helper):
             self._sequence_length.get_shape())
 
       self._zero_inputs = nest.map_structure(
-          lambda inp: array_ops.zeros_like(inp[0, :]), inputs)
+          lambda inp: tf.zeros_like(inp[0, :]), inputs)
 
-      self._batch_size = array_ops.size(sequence_length)
+      self._batch_size = tf.size(sequence_length)
 
   @property
   def batch_size(self):
     return self._batch_size
 
   def initialize(self, name=None):
-    with ops.name_scope(name, "TrainingHelperInitialize"):
-      finished = math_ops.equal(0, self._sequence_length)
+    with tf.name_scope(name, "TrainingHelperInitialize"):
+      finished = tf.equal(0, self._sequence_length)
       return (finished, self._zero_inputs)
 
   def sample(self, time, outputs, name=None, **unused_kwargs):
-    with ops.name_scope(name, "TrainingHelperSample", [time, outputs]):
-      sample_ids = math_ops.cast(
-          math_ops.argmax(outputs, axis=-1), dtypes.int32)
+    with tf.name_scope(name, "TrainingHelperSample", [time, outputs]):
+      sample_ids = tf.cast(
+          tf.argmax(outputs, axis=-1), tf.dtypes.int32)
       return sample_ids
 
   def next_inputs(self, time, outputs, state, name=None, **unused_kwargs):
     """next_inputs_fn for TrainingHelper."""
-    with ops.name_scope(name, "TrainingHelperNextInputs",
+    with tf.name_scope(name, "TrainingHelperNextInputs",
                         [time, outputs, state]):
       # next_time = time + 1
       next_time = time +1
 
       finished = (next_time >= self._sequence_length)
-      all_finished = math_ops.reduce_all(finished)
+      all_finished = tf.reduce_all(finished)
       def read_from_ta(inp):
         return inp.read(next_time-1)
-      next_inputs = control_flow_ops.cond(
+      next_inputs = tf.cond(
           all_finished, lambda: self._zero_inputs,
           lambda: nest.map_structure(read_from_ta, self._input_tas))
       return (finished, next_inputs, state)

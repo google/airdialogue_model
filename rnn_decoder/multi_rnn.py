@@ -14,14 +14,12 @@
 
 """this class is changed so that outputs of all LSTM layers are recorded not just the last one."""
 
-from tensorflow.compat.v1.python.framework import ops
-from tensorflow.compat.v1.python.ops import array_ops
-from tensorflow.compat.v1.python.ops import variable_scope as vs
-from tensorflow.compat.v1.python.ops.rnn_cell_impl import RNNCell
-from tensorflow.compat.v1.python.util import nest
+import tensorflow.compat.v1 as tf
+# TODO: verify if we need this class at all
+from tensorflow.python.util import nest
 
 
-class MultiRNNCell(RNNCell):
+class MultiRNNCell(tf.nn.rnn_cell.RNNCell):
   """RNN cell composed sequentially of multiple simple cells."""
 
   def __init__(self, cells, state_is_tuple=True):
@@ -64,7 +62,7 @@ class MultiRNNCell(RNNCell):
     return self._cells[-1].output_size * len(self._cells)
 
   def zero_state(self, batch_size, dtype):
-    with ops.name_scope(type(self).__name__ + "ZeroState", values=[batch_size]):
+    with tf.name_scope(type(self).__name__ + "ZeroState", values=[batch_size]):
       if self._state_is_tuple:
         return tuple(cell.zero_state(batch_size, dtype) for cell in self._cells)
       else:
@@ -79,7 +77,7 @@ class MultiRNNCell(RNNCell):
     all_output = []
     new_states = []
     for i, cell in enumerate(self._cells):
-      with vs.variable_scope("cell_%d" % i):
+      with tf.variable_scope("cell_%d" % i):
         if self._state_is_tuple:
           if not nest.is_sequence(state):
             raise ValueError(
@@ -87,7 +85,7 @@ class MultiRNNCell(RNNCell):
                 (len(self.state_size), state))
           cur_state = state[i]
         else:
-          cur_state = array_ops.slice(state, [0, cur_state_pos],
+          cur_state = tf.slice(state, [0, cur_state_pos],
                                       [-1, cell.state_size])
           cur_state_pos += cell.state_size
         cur_inp, new_state = cell(cur_inp, cur_state)
@@ -96,8 +94,8 @@ class MultiRNNCell(RNNCell):
 
     new_states = (
         tuple(new_states)
-        if self._state_is_tuple else array_ops.concat(new_states, 1))
-    concat = array_ops.concat(all_output,
+        if self._state_is_tuple else tf.concat(new_states, 1))
+    concat = tf.concat(all_output,
                               1)  # batch_size* (unit_size*num_layers)
     # return cur_inp, new_states
     return concat, new_states

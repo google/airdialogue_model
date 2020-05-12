@@ -22,6 +22,7 @@ training/evaluation tasks.
 import collections
 from functools import partial
 import tensorflow.compat.v1 as tf
+from tensorflow import contrib
 
 # len_action = 3
 class BatchedInput(
@@ -336,7 +337,7 @@ def get_iterator(dataset_data,
       return batching_func(windowed_data)
 
     batched_dataset = combined_dataset.apply(
-        tf.contrib.data.group_by_window(
+        contrib.data.group_by_window(
             key_func=key_func, reduce_func=reduce_func, window_size=batch_size))
 
   else:

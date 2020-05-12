@@ -16,7 +16,7 @@
 
 import os
 import time
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 import model as diag_model
 import model_helper
 from utils import dialogue_utils
@@ -61,7 +61,10 @@ def single_worker_inference(infer_model, infer_sess, eval_model, eval_sess,
   """the actual function for inference."""
   # load datasets
   infer_src_data = load_data(hparams.infer_src_data)
-  infer_tar_data = load_data(hparams.infer_tar_data)
+  if hparams.infer_tar_data:
+    infer_tar_data = load_data(hparams.infer_tar_data)
+  else:
+    infer_tar_data = None
   infer_kb = load_data(hparams.infer_kb)
 
   # load model and session
@@ -102,13 +105,14 @@ def single_worker_inference(infer_model, infer_sess, eval_model, eval_sess,
                    infer_model.kb_placeholder,
                    infer_model.batch_size_placeholder)
   # run eval model to get perplexity
-  eval_handle = eval_sess.run(eval_model.eval_iterator.string_handle())
-  dev_ppl, _ = run_internal_eval(eval_model, eval_handle, eval_sess,
-                                 hparams.out_dir, hparams, summary_writer)
-  utils.add_summary(summary_writer, global_step, "dev_ppl", dev_ppl)
-  total_inference_time = time.time() - start_time
-  utils.add_summary(summary_writer, global_step, "infer_time",
-                    total_inference_time)
+  if not hparams.codalab and hparams.infer_tar_data:
+    eval_handle = eval_sess.run(eval_model.eval_iterator.string_handle())
+    dev_ppl, _ = run_internal_eval(eval_model, eval_handle, eval_sess,
+            hparams.out_dir, hparams, summary_writer)
+    utils.add_summary(summary_writer, global_step, "dev_ppl", dev_ppl)
+    total_inference_time = time.time() - start_time
+    utils.add_summary(summary_writer, global_step, "infer_time",
+            total_inference_time)
 
 
 def infer_fn(hparams, identity, scope=None, extra_args=None, target_session=""):

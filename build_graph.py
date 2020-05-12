@@ -14,6 +14,7 @@
 
 """procedures to build graph."""
 import tensorflow.compat.v1 as tf
+from tensorflow.contrib import seq2seq
 import model_helper
 from rnn_decoder import basic_decoder
 from rnn_decoder import helper as help_py
@@ -89,8 +90,8 @@ def _build_decoder_cell(model, hparams, encoder_state, base_gpu):
       base_gpu=base_gpu)
 
   # For beam search, we need to replicate encoder infos beam_width times
-  if model.mode == tf.contrib.learn.ModeKeys.INFER and hparams.beam_width > 0:
-    decoder_initial_state = tf.contrib.seq2seq.tile_batch(
+  if model.mode == tf.estimator.ModeKeys.PREDICT and hparams.beam_width > 0:
+    decoder_initial_state = seq2seq.tile_batch(
         encoder_state, multiplier=hparams.beam_width)
   else:
     decoder_initial_state = encoder_state
@@ -136,7 +137,7 @@ def _build_decoder(model, encoder_outputs, encoder_state, hparams, start_token,
         aux_hidden_state=aux_hidden_state)
 
     # Dynamic decoding
-    outputs_train, _, _ = tf.contrib.seq2seq.dynamic_decode(
+    outputs_train, _, _ = seq2seq.dynamic_decode(
         my_decoder_train,
         output_time_major=False,
         swap_memory=True,
@@ -150,8 +151,8 @@ def _build_decoder(model, encoder_outputs, encoder_state, hparams, start_token,
     beam_width = hparams.beam_width
     length_penalty_weight = hparams.length_penalty_weight
 
-    if model.mode == tf.contrib.learn.ModeKeys.INFER and beam_width > 0:
-      my_decoder_infer = tf.contrib.seq2seq.BeamSearchDecoder(
+    if model.mode == tf.estimator.ModeKeys.PREDICT and beam_width > 0:
+      my_decoder_infer = seq2seq.BeamSearchDecoder(
           cell=cell,
           embedding=model.embedding_decoder,
           start_tokens=start_tokens,
@@ -163,14 +164,14 @@ def _build_decoder(model, encoder_outputs, encoder_state, hparams, start_token,
     else:
       # Helper
       if model.mode in dialogue_utils.self_play_modes:
-        helper_infer = tf.contrib.seq2seq.SampleEmbeddingHelper(
+        helper_infer = seq2seq.SampleEmbeddingHelper(
             model.embedding_decoder, start_tokens, end_token)
       else:  # inference
-        helper_infer = tf.contrib.seq2seq.GreedyEmbeddingHelper(
+        helper_infer = seq2seq.GreedyEmbeddingHelper(
             model.embedding_decoder, start_tokens, end_token)
 
       # Decoder
-      my_decoder_infer = tf.contrib.seq2seq.BasicDecoder(
+      my_decoder_infer = seq2seq.BasicDecoder(
           cell,
           helper_infer,
           decoder_initial_state,
@@ -178,14 +179,14 @@ def _build_decoder(model, encoder_outputs, encoder_state, hparams, start_token,
       )
 
     # Dynamic decoding
-    outputs_infer, _, _ = tf.contrib.seq2seq.dynamic_decode(
+    outputs_infer, _, _ = seq2seq.dynamic_decode(
         my_decoder_infer,
         maximum_iterations=hparams.max_inference_len,
         output_time_major=False,
         swap_memory=True,
         scope=decoder_scope)
 
-    if model.mode == tf.contrib.learn.ModeKeys.INFER and beam_width > 0:
+    if model.mode == tf.estimator.ModeKeys.PREDICT and beam_width > 0:
       logits_infer = tf.no_op()
       sample_id_infer = outputs_infer.predicted_ids
     else:
@@ -209,8 +210,8 @@ def _build_action_decoder_cell(model, hparams, encoder_state, base_gpu):
       base_gpu=base_gpu)
 
   # For beam search, we need to replicate encoder infos beam_width times
-  if model.mode == tf.contrib.learn.ModeKeys.INFER and hparams.beam_width > 0:
-    decoder_initial_state = tf.contrib.seq2seq.tile_batch(
+  if model.mode == tf.estimator.ModeKeys.PREDICT and hparams.beam_width > 0:
+    decoder_initial_state = seq2seq.tile_batch(
         encoder_state[-1], multiplier=hparams.beam_width)
   else:
     decoder_initial_state = encoder_state[-1]
@@ -246,15 +247,15 @@ def _build_decoder_action(model, dialogue_state, hparams, start_token,
                                              iterator.action)
 
     # Helper
-    helper_train = tf.contrib.seq2seq.TrainingHelper(
+    helper_train = seq2seq.TrainingHelper(
         decoder_emb_inp, iterator.action_len, time_major=False)
 
     # Decoder
-    my_decoder_train = tf.contrib.seq2seq.BasicDecoder(
+    my_decoder_train = seq2seq.BasicDecoder(
         cell, helper_train, decoder_initial_state, output_layer)
 
     # Dynamic decoding
-    outputs_train, _, _ = tf.contrib.seq2seq.dynamic_decode(
+    outputs_train, _, _ = seq2seq.dynamic_decode(
         my_decoder_train,
         output_time_major=False,
         swap_memory=True,
@@ -267,8 +268,8 @@ def _build_decoder_action(model, dialogue_state, hparams, start_token,
     beam_width = hparams.beam_width
     length_penalty_weight = hparams.length_penalty_weight
 
-    if model.mode == tf.contrib.learn.ModeKeys.INFER and beam_width > 0:
-      my_decoder_infer = tf.contrib.seq2seq.BeamSearchDecoder(
+    if model.mode == tf.estimator.ModeKeys.PREDICT and beam_width > 0:
+      my_decoder_infer = seq2seq.BeamSearchDecoder(
           cell=cell,
           embedding=model.embedding_decoder,
           start_tokens=start_tokens,
@@ -280,14 +281,14 @@ def _build_decoder_action(model, dialogue_state, hparams, start_token,
     else:
       # Helper
       if model.mode in dialogue_utils.self_play_modes:
-        helper_infer = tf.contrib.seq2seq.SampleEmbeddingHelper(
+        helper_infer = seq2seq.SampleEmbeddingHelper(
             model.embedding_decoder, start_tokens, end_token)
       else:
-        helper_infer = tf.contrib.seq2seq.GreedyEmbeddingHelper(
+        helper_infer = seq2seq.GreedyEmbeddingHelper(
             model.embedding_decoder, start_tokens, end_token)
 
       # Decoder
-      my_decoder_infer = tf.contrib.seq2seq.BasicDecoder(
+      my_decoder_infer = seq2seq.BasicDecoder(
           cell,
           helper_infer,
           decoder_initial_state,
@@ -295,14 +296,14 @@ def _build_decoder_action(model, dialogue_state, hparams, start_token,
       )
 
     # Dynamic decoding
-    outputs_infer, _, _ = tf.contrib.seq2seq.dynamic_decode(
+    outputs_infer, _, _ = seq2seq.dynamic_decode(
         my_decoder_infer,
         maximum_iterations=hparams.len_action,
         output_time_major=False,
         swap_memory=True,
         scope=decoder_scope)
 
-    if model.mode == tf.contrib.learn.ModeKeys.INFER and beam_width > 0:
+    if model.mode == tf.estimator.ModeKeys.PREDICT and beam_width > 0:
       logits_infer = tf.no_op()
       sample_id_infer = outputs_infer.predicted_ids
     else:
@@ -522,7 +523,7 @@ def build_graph(model, hparams, scope=None):
       model.dialogue2_val = dialogue2_val
 
     if model.mode in [
-        tf.contrib.learn.ModeKeys.TRAIN, tf.contrib.learn.ModeKeys.EVAL,
+        tf.estimator.ModeKeys.TRAIN, tf.estimator.ModeKeys.EVAL,
         dialogue_utils.mode_self_play_mutable
     ]:
       with tf.device(model_helper.get_device_str(num_layers - 1, num_gpus)):
@@ -534,7 +535,7 @@ def build_graph(model, hparams, scope=None):
             model, logits_trian1, logits_trian2, logits_trian3, dialogue1_val,
             dialogue2_val, action_val)
 
-    elif model.mode == tf.contrib.learn.ModeKeys.INFER or model.mode == dialogue_utils.mode_self_play_immutable:
+    elif model.mode == tf.estimator.ModeKeys.PREDICT or model.mode == dialogue_utils.mode_self_play_immutable:
       sl_loss, sl_loss_arr, rl_loss_arr = None, None, None
     else:
       raise ValueError("mode not known")

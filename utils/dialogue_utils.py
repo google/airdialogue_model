@@ -260,9 +260,8 @@ def get_translation(nmt_outputs, sent_id, tgt_eos):
   """Given batch decoding outputs, select a sentence and turn to text."""
   # Select a sentence
   output = nmt_outputs[sent_id, :].tolist()
-  if tgt_eos and tgt_eos in output:
-    tgt_eos = str.encode(tgt_eos)
-    output = output[:output.index(tgt_eos)]
+  if tgt_eos and str.encode(tgt_eos) in output:
+    output = output[:output.index(str.encode(tgt_eos))]
   translation = utils.format_text(output)
   return translation
 
@@ -271,12 +270,10 @@ def get_translation_cut_both(nmt_outputs, sent_id, start_token, end_token):
   """Given batch decoding outputs, select a sentence and turn to text."""
   # Select a sentence
   output = nmt_outputs[sent_id, :].tolist()
-  if start_token and start_token in output:
-    start_token = str.encode(start_token)
-    output = output[:output.index(start_token)]
-  if end_token and end_token in output:
-    end_token = str.encode(end_token)
-    output = output[:output.index(end_token)]
+  if start_token and str.encode(start_token) in output:
+    output = output[:output.index(str.encode(start_token))]
+  if end_token and str.encode(end_token) in output:
+    output = output[:output.index(str.encode(end_token))]
 
   translation = utils.format_text(output)
 

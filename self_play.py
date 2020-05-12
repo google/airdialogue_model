@@ -22,7 +22,7 @@ import json
 from tqdm import tqdm
 import math
 import numpy as np
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 import model as diag_model
 import model_helper
 from dialogue import SelfplayDialogue
