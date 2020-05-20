@@ -137,9 +137,12 @@ def secondary_fn_tmp(hparams, identity, model_dir, model, eval_model, eval_sess,
   """secondary helper function for inference and evaluation."""
   steps_per_external_eval = 10
   # initialize summary writer
-  summary_writer_path = os.path.join(hparams.out_dir, identity + name + "_log")
-  print("summary_writer_path", summary_writer_path)
-  summary_writer = tf.summary.FileWriter(summary_writer_path, model.graph)
+  if not hparams.codalab:
+    summary_writer_path = os.path.join(hparams.out_dir, identity + name + "_log")
+    print("summary_writer_path", summary_writer_path)
+    summary_writer = tf.summary.FileWriter(summary_writer_path, model.graph)
+  else:
+    summary_writer = None
   config_proto = utils.get_config_proto(
       log_device_placement=hparams.log_device_placement,
       allow_soft_placement=True)
@@ -163,5 +166,6 @@ def secondary_fn_tmp(hparams, identity, model_dir, model, eval_model, eval_sess,
                 global_step, hparams)
     if not hparams.eval_forever:
       break  # if eval_foever is disabled, we only evaluate once
-  summary_writer.close()
+  if summary_writer:
+    summary_writer.close()
   sess.close()

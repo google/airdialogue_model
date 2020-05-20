@@ -20,7 +20,6 @@ import logging
 import re
 import time
 import tensorflow.compat.v1 as tf
-from tensorflow import contrib
 from rnn_decoder.multi_rnn import MultiRNNCell
 from utils import dialogue_utils
 from utils import iterator_utils
@@ -111,8 +110,8 @@ def create_train_model(model_creator,
         kb_dataset,
         vocab_table,
         batch_size=hparams.batch_size,
-        t1=hparams.t1,
-        t2=hparams.t2,
+        t1=hparams.t1.encode(),
+        t2=hparams.t2.encode(),
         eod=hparams.eod,
         len_action=hparams.len_action,
         random_seed=hparams.random_seed,
@@ -167,8 +166,8 @@ def create_eval_model(model_creator, hparams, scope=None, extra_args=None):
         kb_dataset,
         vocab_table,
         batch_size=hparams.batch_size,
-        t1=hparams.t1,
-        t2=hparams.t2,
+        t1=hparams.t1.encode(),
+        t2=hparams.t2.encode(),
         eod=hparams.eod,
         len_action=hparams.len_action,
         random_seed=hparams.random_seed,
@@ -234,7 +233,7 @@ def create_infer_model(model_creator, hparams, scope=None, extra_args=None):
         hparams,
         iterator=batched_iterator,
         handle=handle,
-        mode=tf.estimator.ModeKeys.INFER,
+        mode=tf.estimator.ModeKeys.PREDICT,
         vocab_table=vocab_table,
         reverse_vocab_table=reverse_vocab_table,
         scope=scope,
@@ -272,8 +271,8 @@ def self_play_iterator_creator(hparams, num_workers, jobid):
       kb_dataset,
       vocab_table,
       batch_size=hparams.batch_size,
-      t1=hparams.t1,
-      t2=hparams.t2,
+      t1=hparams.t1.encode(),
+      t2=hparams.t2.encode(),
       eod=hparams.eod,
       len_action=hparams.len_action,
       random_seed=hparams.random_seed,
@@ -304,8 +303,8 @@ def self_play_iterator_creator(hparams, num_workers, jobid):
 
   # this is the actual iterator for self_play_structured_iterator
   self_play_structured_iterator = tf.data.Iterator.from_structure(
-      self_play_fulltext_iterator.output_types,
-      self_play_fulltext_iterator.output_shapes)
+      tf.data.get_output_types(self_play_fulltext_iterator),
+      tf.data.get_output_shapes(self_play_fulltext_iterator))
   iterators = [
       train_iterator, self_play_fulltext_iterator, self_play_structured_iterator
   ]
@@ -344,7 +343,7 @@ def create_selfplay_model(model_creator,
     # get an iterator handler
     handle = tf.placeholder(tf.string, shape=[])
     iterator = tf.data.Iterator.from_string_handle(
-        handle, train_iterator.output_types, train_iterator.output_shapes)
+        handle, tf.data.get_output_types(train_iterator), tf.data.get_output_shapes(train_iterator))
     batched_iterator = iterator_utils.get_batched_iterator(iterator)
 
     model_device_fn = None
@@ -413,11 +412,11 @@ def _single_cell(num_units,
 
   # Cell Type
   utils.print_out("  GRU", new_line=False)
-  single_cell = contrib.rnn.GRUCell(num_units)
+  single_cell = tf.nn.rnn_cell.GRUCell(num_units)
 
   # Dropout (= 1 - keep_prob)
   if dropout > 0.0:
-    single_cell = contrib.rnn.DropoutWrapper(
+    single_cell = tf.nn.rnn_cell.DropoutWrapper(
         cell=single_cell, input_keep_prob=(1.0 - dropout))
     utils.print_out(
         "  %s, dropout=%g " % (type(single_cell).__name__, dropout),
@@ -425,12 +424,12 @@ def _single_cell(num_units,
 
   # Residual
   if residual_connection:
-    single_cell = contrib.rnn.ResidualWrapper(single_cell)
+    single_cell = tf.nn.rnn_cell.ResidualWrapper(single_cell)
     utils.print_out("  %s" % type(single_cell).__name__, new_line=False)
 
   # Device Wrapper
   if device_str:
-    single_cell = contrib.rnn.DeviceWrapper(single_cell, device_str)
+    single_cell = tf.nn.rnn_cell.DeviceWrapper(single_cell, device_str)
     utils.print_out(
         "  %s, device=%s" % (type(single_cell).__name__, device_str),
         new_line=False)
@@ -498,7 +497,7 @@ def create_rnn_cell(num_units,
     if all_layer_outputs:
       return MultiRNNCell(cell_list)
     else:
-      return contrib.rnn.MultiRNNCell(cell_list)
+      return tf.nn.rnn_cell.MultiRNNCell(cell_list)
 
 
 def gradient_clip(gradients, max_gradient_norm):

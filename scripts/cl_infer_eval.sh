@@ -4,7 +4,6 @@ airdialogue prepro \
     --infer_src_data_file "infer_src_data.json" \
     --infer_kb_file "infer_kb.json" \
     --output_dir "." \
-    --nltk_data "./model/data/nltk" \
     --output_prefix 'codalab' --job_type '0|0|1|0|0'
 
 cd model

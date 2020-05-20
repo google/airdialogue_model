@@ -91,9 +91,9 @@ class Model(object):
         element_infer = self.sample_ids_arr[i]
         element_src = source[0]
         # element_src=0
-        src = reverse_vocab_table.lookup(tf.to_int64(element_src))
+        src = reverse_vocab_table.lookup(tf.cast(element_src, tf.int64))
         infer = reverse_vocab_table.lookup(
-            tf.to_int64(element_infer)
+            tf.cast(element_infer, tf.int64)
         )[0]  # src can only get the first one so I only get the first inference
         if i == 0:
           self.sample_words_arr1.append((tf.constant(i), src, infer))
@@ -108,20 +108,20 @@ class Model(object):
     elif self.mode == tf.estimator.ModeKeys.PREDICT:
       self.sample_ids_arr = sample_id_arr_infer
       self.sample_words_arr = []
-      self.source = reverse_vocab_table.lookup(tf.to_int64(iterator.source))
+      self.source = reverse_vocab_table.lookup(tf.cast(iterator.source, tf.int64))
       for element in self.sample_ids_arr:
         self.sample_words_arr.append(
-            reverse_vocab_table.lookup(tf.to_int64(element)))
+            reverse_vocab_table.lookup(tf.cast(element, tf.int64)))
     elif self.mode in dialogue_utils.self_play_modes:
       #### self play
       self.train_loss = sl_loss
       self.all_train_loss = sl_loss_arr
       self.selfplay_agent_1_utt = reverse_vocab_table.lookup(
-          tf.to_int64(sample_id_arr_infer[0]))
+          tf.cast(sample_id_arr_infer[0], tf.int64))
       self.selfplay_agent_2_utt = reverse_vocab_table.lookup(
-          tf.to_int64(sample_id_arr_infer[1]))
+          tf.cast(sample_id_arr_infer[1], tf.int64))
       self.selfplay_action = reverse_vocab_table.lookup(
-          tf.to_int64(sample_id_arr_infer[2]))
+          tf.cast(sample_id_arr_infer[2], tf.int64))
       if self.mode == dialogue_utils.mode_self_play_mutable:
         self.vl1, self.vl2, self.pl1, self.pl2, self.eq11, self.eq12, self.eq2 = rl_loss_arr  # reinforcement updates
 
@@ -147,7 +147,7 @@ class Model(object):
     if self.mode == tf.estimator.ModeKeys.TRAIN or self.mode == dialogue_utils.mode_self_play_mutable:
       self.learning_rate = tf.constant(hparams.learning_rate)
 
-      inv_decay = warmup_factor**(tf.to_float(warmup_steps - self.global_step))
+      inv_decay = warmup_factor**(tf.cast(warmup_steps - self.global_step, tf.float32))
       self.learning_rate = tf.cond(
           self.global_step < hparams.learning_rate_warmup_steps,
           lambda: inv_decay * self.learning_rate,

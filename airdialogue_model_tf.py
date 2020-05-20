@@ -703,7 +703,7 @@ def extend_hparams(hparams):
   hparams.add_hparam("unk", vocab_utils.UNK)
 
   # Check out_dir
-  if not tf.gfile.Exists(hparams.out_dir):
+  if not tf.io.gfile.exists(hparams.out_dir):
     utils.print_out("# Creating output directory %s ..." % hparams.out_dir)
     tf.gfile.MakeDirs(hparams.out_dir)
   # Evaluation
@@ -756,7 +756,7 @@ def ensure_compatible_hparams(hparams, default_hparams, hparams_path):
       "dev_self_play_eval_kb", "test_infer_src_data", "test_infer_tar_data",
       "test_infer_kb", "test_self_play_eval_data", "test_self_play_eval_kb",
       "eval_prefix", "eval_forever", "selfplay_eval_output_file",
-      "num_self_play_train_steps"
+      "num_self_play_train_steps", "codalab"
   ]
   for key in updated_keys:
     if key in default_config and getattr(hparams, key) != default_config[key]:

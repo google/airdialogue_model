@@ -58,7 +58,7 @@ def output_generated_data(generated_data, eval_out):
         'utterance': ' '.join(utterance),
         'kb': kb
     }
-    # print ('generated_obj', generated_obj)
+    # print('generated_obj', generated_obj)
     eval_out.write(json.dumps(generated_obj) + '\n')
 
 
@@ -111,7 +111,7 @@ def single_worker_selfplay(mutable_model, immutable_model, mutable_sess,
   start_time = time.time()
   num_flips_for_initial_speaker = 2
   with tf.gfile.GFile(hparams.selfplay_eval_output_file, 'w') as selfplay_out:
-    print ('flip 1')
+    print('flip 1')
     for flip in range(num_flips_for_initial_speaker):
       # epoch = -1
       i = len(selfplay_data)  # force shuffling at the beginning
@@ -135,7 +135,7 @@ def single_worker_selfplay(mutable_model, immutable_model, mutable_sess,
 
         batch_data = selfplay_data[start_ind:end_ind]
         batch_kb = selfplay_kb[start_ind:end_ind]
-        # we indicaet to let agent1 to talk first. Keep in mind that we will
+        # we indicate to let agent1 to talk first. Keep in mind that we will
         # swap between agent1 and agent2.
         speaker = flip % 2
         generated_data, _, summary = dialogue.talk(hparams.max_dialogue_len,
@@ -151,7 +151,7 @@ def single_worker_selfplay(mutable_model, immutable_model, mutable_sess,
   handle_summary(dialogue_mode, summary_writer, global_step, all_summary,
                  summary_weight)
   end_time = time.time()
-  print ('finished')
+  print('finished')
   utils.add_summary(summary_writer, global_step, dialogue_mode + '_time',
                     end_time - start_time)  #  step wise summary
 
@@ -251,7 +251,7 @@ def self_play_eval_fn(hparams,
       # if eval_forever is disabled, we will do one selfplay evalation
       # otherwise, we will wait until certain number of timesteps are elapsed.
       last_external_eval_step = global_step
-      print ('do single worker evaluation')
+      print('do single worker evaluation')
       single_worker_selfplay(mutable_model, immutable_model, mutable_sess,
                              immutable_sess, hparams.self_play_eval_data,
                              hparams.self_play_eval_kb, global_step, hparams,
@@ -370,7 +370,7 @@ def multi_worker_selfplay(hparams,
 
   # save first model
   if is_chief:
-    print('saveing the first checkpoint to', hparams.out_dir)
+    print('saving the first checkpoint to', hparams.out_dir)
     mutable_model.model.saver.save(
         mutable_sess,
         os.path.join(hparams.out_dir, 'dialogue.ckpt'),
@@ -404,7 +404,7 @@ def multi_worker_selfplay(hparams,
   # this is the start point of the self-play data. force shuffling at the beginning
   i = len(selfplay_data)
   train_stats = [0, 0]
-  while global_step < hparams.num_self_play_train_steps:
+  while global_step < hparams.num_self_play_train_steps + hparams.num_train_steps:
     # a. reload immutable model, muttable will be automated managed by supervisor
     if immutable_model_reload_freq > 0 and global_step - last_immmutable_model_reload > immutable_model_reload_freq:
       immutable_model, immutable_sess = load_self_play_model(
@@ -429,8 +429,8 @@ def multi_worker_selfplay(hparams,
     batch_data, batch_kb = selfplay_data[start_ind:end_ind], selfplay_kb[
         start_ind:end_ind]
     train_example, _, _ = dialogue.talk(hparams.max_dialogue_len, batch_data,
-                                        batch_kb, agent1, agent2, batch_size,
-                                        global_step)
+                                        batch_kb, agent1, agent2, global_step,
+                                        batch_size)
     possible_global_step = dialogue.maybe_train(
         train_example, mutable_agent_index, global_step, force=True)
     if possible_global_step:

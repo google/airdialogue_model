@@ -501,8 +501,8 @@ def build_graph(model, hparams, scope=None):
           model,
           encoder_state2,
           hparams,
-          hparams.t1,  # dialogue ends with t2, action starts with t1
-          hparams.t2,
+          hparams.t1.encode(),  # dialogue ends with t2, action starts with t1
+          hparams.t2.encode(),
           model.output_layer_action)
       logits_trian3, _, sample_id_train3, sample_id_infer3 = res
 
@@ -561,11 +561,11 @@ def _compute_loss(model, logits1, logits2, logits3):
   target_weights1 = tf.cast(model.iterator.mask1, dtype=logits1.dtype)
   target_weights2 = tf.cast(model.iterator.mask2, dtype=logits2.dtype)
 
-  loss1 = tf.reduce_sum(tf.multiply(crossent1, target_weights1)) / tf.to_float(
-      model.batch_size)
-  loss2 = tf.reduce_sum(tf.multiply(crossent2, target_weights2)) / tf.to_float(
-      model.batch_size)
-  loss3 = tf.reduce_sum(crossent3) / tf.to_float(model.batch_size)
+  loss1 = tf.reduce_sum(tf.multiply(crossent1, target_weights1)) / tf.cast(
+      model.batch_size, tf.float32)
+  loss2 = tf.reduce_sum(tf.multiply(crossent2, target_weights2)) / tf.cast(
+      model.batch_size, tf.float32)
+  loss3 = tf.reduce_sum(crossent3) / tf.cast(model.batch_size, tf.float32)
 
   probs = tf.nn.softmax(logits3, -1)  # bs, len_action, vocab
   predictions = tf.argmax(probs, axis=2)  # bs, len_action, 1
