@@ -68,22 +68,22 @@ Once the predictative files are generated, we will depend on the [AirDialogue to
 We are currently working on the scoring script.
 ```
 airdialogue score --pred_data ./data/out_dir/dev_inference_out.txt \
-                  --true_data ./data/airdialogue/tokenized/dev.infer.tar.data \
-                  --true_kb ./data/airdialogue/tokenized/dev.infer.kb \
+                  --true_data ./data/airdialogue/json/dev_data.json \
+                  --true_kb ./data/airdialogue/json/dev_kb.json \
                   --task infer \
                   --output ./data/out_dir/dev_bleu.json
 ```
 ```
 airdialogue score --pred_data ./data/out_dir/dev_selfplay_out.txt \
-                  --true_data ./data/airdialogue/tokenized/dev.selfplay.eval.data \
-                  --true_kb ./data/airdialogue/tokenized/dev.selfplay.eval.kb \
+                  --true_data ./data/airdialogue/json/dev_data.json \
+                  --true_kb ./data/airdialogue/json/dev_kb.json \
                   --task selfplay \
                   --output ./data/out_dir/dev_selfplay.json
 ```
 ```
 airdialogue score --pred_data ./data/out_dir/ood1_selfplay_out.txt \
-                  --true_data ./data/airdialogue/tokenized/ood1.selfplay.eval.data \
-                  --true_kb ./data/airdialogue/tokenized/ood1.selfplay.eval.kb \
+                  --true_data ./data/airdialogue/json/ood1_data.json \
+                  --true_kb ./data/airdialogue/json/ood1_kb.json \
                   --task selfplay \
                   --output ./data/out_dir/ood1_selfplay.json
 ```
@@ -155,22 +155,22 @@ bash ./scripts/evaluate.sh -p dev -a ood1 -m ./data/synthesized_out_dir -o ./dat
 ###### Scoring
 ```
 airdialogue score --pred_data ./data/synthesized_out_dir/dev_inference_out.txt \
-                  --true_data ./data/synthesized/tokenized/dev.infer.tar.data \
-                  --true_kb ./data/airdialogue/tokenized/dev.infer.kb \
+                  --true_data ./data/synthesized/json/dev_data.json \
+                  --true_kb ./data/airdialogue/json/dev_kb.json \
                   --task infer \
                   --output ./data/synthesized_out_dir/dev_bleu.json
 ```
 ```
 airdialogue score --pred_data ./data/synthesized_out_dir/dev_selfplay_out.txt \
-                  --true_data ./data/synthesized/tokenized/dev.selfplay.eval.data \
-                  --true_kb ./data/airdialogue/tokenized/dev.selfplay.eval.kb \
+                  --true_data ./data/synthesized/json/dev_data.json \
+                  --true_kb ./data/airdialogue/json/dev_kb.json \
                   --task selfplay \
                   --output ./data/synthesized_out_dir/dev_selfplay.json
 ```
 ```
 airdialogue score --pred_data ./data/synthesized_out_dir/ood1_selfplay_out.txt \
-                  --true_data ./data/synthesized/tokenized/ood1.selfplay.eval.data \
-                  --true_kb ./data/airdialogue/tokenized/ood1.selfplay.eval.kb \
+                  --true_data ./data/synthesized/json/ood1_data.json \
+                  --true_kb ./data/airdialogue/json/ood1_kb.json \
                   --task selfplay \
                   --output ./data/synthesized_out_dir/ood1_selfplay.json
 ```

@@ -17,6 +17,7 @@
 import copy
 import os
 import random
+import re
 import time
 import json
 from tqdm import tqdm
@@ -46,17 +47,48 @@ def handle_summary(diag_mode, summary_writer, global_step, all_summary,
     name = diag_mode + '_' + key
     utils.add_summary(summary_writer, global_step, name, combined[key])
 
+def pred_action_to_obj(pred_action):
+    action_obj = {
+        'name': ' '.join([pred_action[0], pred_action[1]]),
+        'flight': [''],
+        'status': ''
+    }
+    fl_match = re.match('<fl_(\d+)>', pred_action[2])
+    if fl_match:
+        action_obj['flight'][0] = fl_match[0]
+    status_match = re.match('<st_(\w+)>', pred_action[3])
+    if status_match:
+        action_obj['status'] = status_match[0]
+    return action_obj
+
+def utterance_to_dialogue(utt):
+    stack = ""
+    dialogue = []
+    for s in utt:
+        if s == "<t1>" or s == "<t2>":
+            if stack:
+                dialogue.append(stack)
+                stack = ""
+            stack += "customer:" if s == "<t1>" else "agent:"
+        elif s == "<eod>":
+            break
+        else:
+            stack += " " + s
+    if stack:
+        dialogue.append(stack)
+    return dialogue
 
 def output_generated_data(generated_data, eval_out):
   bs_intent, bs_pred_action, bs_truth_action, utt_arr, bs_kb = generated_data
   for intent, pred_action, true_action, utterance, kb in zip(
       bs_intent, bs_pred_action, bs_truth_action, utt_arr, bs_kb):
+
     generated_obj = {
-        'intent': intent,
-        'pred_action': ' '.join(pred_action),
-        'action': true_action,
-        'utterance': ' '.join(utterance),
-        'kb': kb
+        # 'intent': intent,
+        'pred_action': pred_action_to_obj(pred_action),
+        # 'action': true_action,
+        'dialogue': utterance_to_dialogue(utterance),
+        # 'kb': kb
     }
     # print('generated_obj', generated_obj)
     eval_out.write(json.dumps(generated_obj) + '\n')
@@ -141,13 +173,12 @@ def single_worker_selfplay(mutable_model, immutable_model, mutable_sess,
         generated_data, _, summary = dialogue.talk(hparams.max_dialogue_len,
                                                    batch_data, batch_kb, agent1,
                                                    agent2, worker_step,
-                                                   batch_size, speaker)
+                                                   end_ind - start_ind, speaker)
         output_generated_data(generated_data, selfplay_out)
         all_summary.append(summary)
         # number of elements processed
         summary_weight.append(end_ind - start_ind)
         worker_step += 1
-        # i += batch_size
   handle_summary(dialogue_mode, summary_writer, global_step, all_summary,
                  summary_weight)
   end_time = time.time()
