@@ -24,6 +24,7 @@ import sys
 import time
 
 import tensorflow.compat.v1 as tf
+from tensorflow import contrib
 
 
 def safe_exp(value):
@@ -77,10 +78,10 @@ def load_hparams(model_dir):
   hparams_file = os.path.join(model_dir, "hparams")
   if tf.gfile.Exists(hparams_file):
     print_out("# Loading hparams from %s" % hparams_file)
-    with codecs.getreader("utf-8")(tf.gfile.GFile(hparams_file, "rb")) as f:
+    with codecs.getreader("utf-8")(tf.io.gfile.GFile(hparams_file, "rb")) as f:
       try:
         hparams_values = json.load(f)
-        hparams = tf.contrib.training.HParams(**hparams_values)
+        hparams = contrib.training.HParams(**hparams_values)
       except ValueError:
         print_out("  can't load hparams file")
         return None
@@ -96,7 +97,7 @@ def maybe_parse_standard_hparams(hparams, hparams_path):
 
   if tf.gfile.Exists(hparams_path):
     print_out("# Loading standard hparams from %s" % hparams_path)
-    with tf.gfile.GFile(hparams_path, "r") as f:
+    with tf.io.gfile.GFile(hparams_path, "r") as f:
       hparams.parse_json(f.read())
 
   return hparams
@@ -106,7 +107,7 @@ def save_hparams(out_dir, hparams):
   """Save hparams."""
   hparams_file = os.path.join(out_dir, "hparams")
   print_out("  saving hparams to %s" % hparams_file)
-  with codecs.getwriter("utf-8")(tf.gfile.GFile(hparams_file, "wb")) as f:
+  with codecs.getwriter("utf-8")(tf.io.gfile.GFile(hparams_file, "wb")) as f:
     f.write(hparams.to_json())
 
 
@@ -121,8 +122,9 @@ def add_summary(summary_writer, global_step, tag, value):
   """Add a new summary to the current summary_writer.
   Useful to log things that are not part of the training graph, e.g., tag=BLEU.
   """
-  summary = tf.Summary(value=[tf.Summary.Value(tag=tag, simple_value=value)])
-  summary_writer.add_summary(summary, global_step)
+  if summary_writer:
+    summary = tf.Summary(value=[tf.Summary.Value(tag=tag, simple_value=value)])
+    summary_writer.add_summary(summary, global_step)
 
 
 def get_config_proto(log_device_placement=False, allow_soft_placement=True):

@@ -225,7 +225,7 @@ def decode_and_evaluate(name,
             speaker = get_speaker(src)
             nmt_outputs = [ut1, ut2][speaker]
             translation = get_translation_cut_both(nmt_outputs, sent_id,
-                                                   hparams.t1, hparams.t2)
+                                                   hparams.t1.encode(), hparams.t2.encode())
             trans_f.write((translation + b'\n').decode('utf-8'))
             cnt += 1
           if last_cnt - cnt >= 10000:  # 400k in total
@@ -260,8 +260,7 @@ def get_translation(nmt_outputs, sent_id, tgt_eos):
   """Given batch decoding outputs, select a sentence and turn to text."""
   # Select a sentence
   output = nmt_outputs[sent_id, :].tolist()
-  if tgt_eos and tgt_eos in output:
-    tgt_eos = str.encode(tgt_eos)
+  if tgt_eos in output:
     output = output[:output.index(tgt_eos)]
   translation = utils.format_text(output)
   return translation
@@ -271,11 +270,9 @@ def get_translation_cut_both(nmt_outputs, sent_id, start_token, end_token):
   """Given batch decoding outputs, select a sentence and turn to text."""
   # Select a sentence
   output = nmt_outputs[sent_id, :].tolist()
-  if start_token and start_token in output:
-    start_token = str.encode(start_token)
+  if start_token in output:
     output = output[:output.index(start_token)]
-  if end_token and end_token in output:
-    end_token = str.encode(end_token)
+  if end_token in output:
     output = output[:output.index(end_token)]
 
   translation = utils.format_text(output)
@@ -321,7 +318,6 @@ def _sample_decode(model, global_step, iterator_handle, sess, hparams,
       sent_id=0,  # there is only one sentence because batch size is 1
       tgt_eos=None)
   src_dialogue = src
-  tar_dialogue = sample_tar_data[decode_id].split('|')[-1]
   utils.print_out('    src: %s' % src_dialogue)
   if sample_tar_data:
     tar_dialogue = sample_tar_data[decode_id].split('|')[-1]

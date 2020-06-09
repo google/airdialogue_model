@@ -20,7 +20,6 @@ import logging
 import re
 import time
 import tensorflow.compat.v1 as tf
-from tf.python.ops import lookup_ops
 from rnn_decoder.multi_rnn import MultiRNNCell
 from utils import dialogue_utils
 from utils import iterator_utils
@@ -34,9 +33,9 @@ def get_initializer(init_op, seed=None, init_weight=None):
     assert init_weight
     return tf.random_uniform_initializer(-init_weight, init_weight, seed=seed)
   elif init_op == "glorot_normal":
-    return tf.contrib.keras.initializers.glorot_normal(seed=seed)
+    return tf.keras.initializers.glorot_normal(seed=seed)
   elif init_op == "glorot_uniform":
-    return tf.contrib.keras.initializers.glorot_uniform(seed=seed)
+    return tf.keras.initializers.glorot_uniform(seed=seed)
   else:
     raise ValueError("Unknown init_op %s" % init_op)
 
@@ -101,20 +100,18 @@ def create_train_model(model_creator,
   graph = tf.Graph()
 
   with graph.as_default(), tf.container(scope or "train"):
-    vocab_table = vocab_utils.create_vocab_tables(hparams.vocab_file)
+    vocab_table, reverse_vocab_table = vocab_utils.create_vocab_tables(hparams.vocab_file)
     data_dataset = tf.data.TextLineDataset(hparams.train_data)
     kb_dataset = tf.data.TextLineDataset(hparams.train_kb)
     skip_count_placeholder = tf.placeholder(shape=(), dtype=tf.int64)
-    reverse_vocab_table = lookup_ops.index_to_string_table_from_file(
-        hparams.vocab_file, default_value=vocab_utils.UNK)
     # this is the actual train_iterator
     train_iterator = iterator_utils.get_iterator(
         data_dataset,
         kb_dataset,
         vocab_table,
         batch_size=hparams.batch_size,
-        t1=hparams.t1,
-        t2=hparams.t2,
+        t1=hparams.t1.encode(),
+        t2=hparams.t2.encode(),
         eod=hparams.eod,
         len_action=hparams.len_action,
         random_seed=hparams.random_seed,
@@ -138,7 +135,7 @@ def create_train_model(model_creator,
           hparams,
           iterator=batched_iterator,
           handle=handle,
-          mode=tf.contrib.learn.ModeKeys.TRAIN,
+          mode=tf.estimator.ModeKeys.TRAIN,
           vocab_table=vocab_table,
           scope=scope,
           extra_args=extra_args,
@@ -158,7 +155,7 @@ def create_eval_model(model_creator, hparams, scope=None, extra_args=None):
   graph = tf.Graph()
 
   with graph.as_default(), tf.container(scope or "eval"):
-    vocab_table = vocab_utils.create_vocab_tables(vocab_file)
+    vocab_table = vocab_utils.create_vocab_tables(vocab_file)[0]
     data_file_placeholder = tf.placeholder(shape=(), dtype=tf.string)
     kb_file_placeholder = tf.placeholder(shape=(), dtype=tf.string)
     data_dataset = tf.data.TextLineDataset(data_file_placeholder)
@@ -169,8 +166,8 @@ def create_eval_model(model_creator, hparams, scope=None, extra_args=None):
         kb_dataset,
         vocab_table,
         batch_size=hparams.batch_size,
-        t1=hparams.t1,
-        t2=hparams.t2,
+        t1=hparams.t1.encode(),
+        t2=hparams.t2.encode(),
         eod=hparams.eod,
         len_action=hparams.len_action,
         random_seed=hparams.random_seed,
@@ -186,7 +183,7 @@ def create_eval_model(model_creator, hparams, scope=None, extra_args=None):
         hparams,
         iterator=batched_iterator,
         handle=handle,
-        mode=tf.contrib.learn.ModeKeys.EVAL,
+        mode=tf.estimator.ModeKeys.EVAL,
         vocab_table=vocab_table,
         scope=scope,
         extra_args=extra_args)
@@ -206,9 +203,7 @@ def create_infer_model(model_creator, hparams, scope=None, extra_args=None):
   graph = tf.Graph()
 
   with graph.as_default(), tf.container(scope or "infer"):
-    vocab_table = vocab_utils.create_vocab_tables(hparams.vocab_file)
-    reverse_vocab_table = lookup_ops.index_to_string_table_from_file(
-        hparams.vocab_file, default_value=vocab_utils.UNK)
+    vocab_table, reverse_vocab_table = vocab_utils.create_vocab_tables(hparams.vocab_file)
 
     data_src_placeholder = tf.placeholder(
         shape=[None], dtype=tf.string, name="src_ph")
@@ -238,7 +233,7 @@ def create_infer_model(model_creator, hparams, scope=None, extra_args=None):
         hparams,
         iterator=batched_iterator,
         handle=handle,
-        mode=tf.contrib.learn.ModeKeys.INFER,
+        mode=tf.estimator.ModeKeys.PREDICT,
         vocab_table=vocab_table,
         reverse_vocab_table=reverse_vocab_table,
         scope=scope,
@@ -266,7 +261,7 @@ def self_play_iterator_creator(hparams, num_workers, jobid):
   need of serializing them into actual text
   files.
   """
-  vocab_table = vocab_utils.create_vocab_tables(hparams.vocab_file)
+  vocab_table = vocab_utils.create_vocab_tables(hparams.vocab_file)[0]
   data_dataset = tf.data.TextLineDataset(hparams.train_data)
   kb_dataset = tf.data.TextLineDataset(hparams.train_kb)
   skip_count_placeholder = tf.placeholder(shape=(), dtype=tf.int64)
@@ -276,8 +271,8 @@ def self_play_iterator_creator(hparams, num_workers, jobid):
       kb_dataset,
       vocab_table,
       batch_size=hparams.batch_size,
-      t1=hparams.t1,
-      t2=hparams.t2,
+      t1=hparams.t1.encode(),
+      t2=hparams.t2.encode(),
       eod=hparams.eod,
       len_action=hparams.len_action,
       random_seed=hparams.random_seed,
@@ -308,8 +303,8 @@ def self_play_iterator_creator(hparams, num_workers, jobid):
 
   # this is the actual iterator for self_play_structured_iterator
   self_play_structured_iterator = tf.data.Iterator.from_structure(
-      self_play_fulltext_iterator.output_types,
-      self_play_fulltext_iterator.output_shapes)
+      tf.data.get_output_types(self_play_fulltext_iterator),
+      tf.data.get_output_shapes(self_play_fulltext_iterator))
   iterators = [
       train_iterator, self_play_fulltext_iterator, self_play_structured_iterator
   ]
@@ -332,9 +327,7 @@ def create_selfplay_model(model_creator,
   """create slef play models."""
   graph = tf.Graph()
   with graph.as_default(), tf.container(scope or "selfplay"):
-    vocab_table = vocab_utils.create_vocab_tables(hparams.vocab_file)
-    reverse_vocab_table = lookup_ops.index_to_string_table_from_file(
-        hparams.vocab_file, default_value=vocab_utils.UNK)
+    vocab_table, reverse_vocab_table = vocab_utils.create_vocab_tables(hparams.vocab_file)
 
     if is_mutable:
       mutable_index = 0
@@ -350,7 +343,7 @@ def create_selfplay_model(model_creator,
     # get an iterator handler
     handle = tf.placeholder(tf.string, shape=[])
     iterator = tf.data.Iterator.from_string_handle(
-        handle, train_iterator.output_types, train_iterator.output_shapes)
+        handle, tf.data.get_output_types(train_iterator), tf.data.get_output_shapes(train_iterator))
     batched_iterator = iterator_utils.get_batched_iterator(iterator)
 
     model_device_fn = None
@@ -415,15 +408,15 @@ def _single_cell(num_units,
                  residual_connection=False,
                  device_str=None):
   """Create an instance of a single RNN cell."""
-  dropout = dropout if mode == tf.contrib.learn.ModeKeys.TRAIN else 0.0
+  dropout = dropout if mode == tf.estimator.ModeKeys.TRAIN else 0.0
 
   # Cell Type
   utils.print_out("  GRU", new_line=False)
-  single_cell = tf.contrib.rnn.GRUCell(num_units)
+  single_cell = tf.nn.rnn_cell.GRUCell(num_units)
 
   # Dropout (= 1 - keep_prob)
   if dropout > 0.0:
-    single_cell = tf.contrib.rnn.DropoutWrapper(
+    single_cell = tf.nn.rnn_cell.DropoutWrapper(
         cell=single_cell, input_keep_prob=(1.0 - dropout))
     utils.print_out(
         "  %s, dropout=%g " % (type(single_cell).__name__, dropout),
@@ -431,12 +424,12 @@ def _single_cell(num_units,
 
   # Residual
   if residual_connection:
-    single_cell = tf.contrib.rnn.ResidualWrapper(single_cell)
+    single_cell = tf.nn.rnn_cell.ResidualWrapper(single_cell)
     utils.print_out("  %s" % type(single_cell).__name__, new_line=False)
 
   # Device Wrapper
   if device_str:
-    single_cell = tf.contrib.rnn.DeviceWrapper(single_cell, device_str)
+    single_cell = tf.nn.rnn_cell.DeviceWrapper(single_cell, device_str)
     utils.print_out(
         "  %s, device=%s" % (type(single_cell).__name__, device_str),
         new_line=False)
@@ -504,7 +497,7 @@ def create_rnn_cell(num_units,
     if all_layer_outputs:
       return MultiRNNCell(cell_list)
     else:
-      return tf.contrib.rnn.MultiRNNCell(cell_list)
+      return tf.nn.rnn_cell.MultiRNNCell(cell_list)
 
 
 def gradient_clip(gradients, max_gradient_norm):
@@ -565,8 +558,9 @@ def load_model(model, ckpt, session, name):
   start_time = time.time()
   available_var_list = (
       get_variables_available_in_checkpoint(model.saver._var_list, ckpt))
-  logging.info("available_var_list:%s,%s", len(available_var_list),
-               available_var_list)
+  # TODO: handle verbosity
+  # logging.info("available_var_list:%s,%s", len(available_var_list),
+  #             available_var_list)
   tf.train.Saver(available_var_list).restore(session, ckpt)
   session.run(tf.tables_initializer())
   utils.print_out("  loaded %s model parameters from %s, time %.2fs" %

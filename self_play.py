@@ -17,12 +17,13 @@
 import copy
 import os
 import random
+import re
 import time
 import json
 from tqdm import tqdm
 import math
 import numpy as np
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 import model as diag_model
 import model_helper
 from dialogue import SelfplayDialogue
@@ -46,19 +47,50 @@ def handle_summary(diag_mode, summary_writer, global_step, all_summary,
     name = diag_mode + '_' + key
     utils.add_summary(summary_writer, global_step, name, combined[key])
 
+def pred_action_to_obj(pred_action):
+    action_obj = {
+        'name': ' '.join([pred_action[0], pred_action[1]]),
+        'flight': [''],
+        'status': ''
+    }
+    fl_match = re.match('<fl_(\d+)>', pred_action[2])
+    if fl_match:
+        action_obj['flight'][0] = fl_match[0]
+    status_match = re.match('<st_(\w+)>', pred_action[3])
+    if status_match:
+        action_obj['status'] = status_match[0]
+    return action_obj
+
+def utterance_to_dialogue(utt):
+    stack = ""
+    dialogue = []
+    for s in utt:
+        if s == "<t1>" or s == "<t2>":
+            if stack:
+                dialogue.append(stack)
+                stack = ""
+            stack += "customer:" if s == "<t1>" else "agent:"
+        elif s == "<eod>":
+            break
+        else:
+            stack += " " + s
+    if stack:
+        dialogue.append(stack)
+    return dialogue
 
 def output_generated_data(generated_data, eval_out):
   bs_intent, bs_pred_action, bs_truth_action, utt_arr, bs_kb = generated_data
   for intent, pred_action, true_action, utterance, kb in zip(
       bs_intent, bs_pred_action, bs_truth_action, utt_arr, bs_kb):
+
     generated_obj = {
-        'intent': intent,
-        'pred_action': ' '.join(pred_action),
-        'action': true_action,
-        'utterance': ' '.join(utterance),
-        'kb': kb
+        # 'intent': intent,
+        'pred_action': pred_action_to_obj(pred_action),
+        # 'action': true_action,
+        'dialogue': utterance_to_dialogue(utterance),
+        # 'kb': kb
     }
-    # print ('generated_obj', generated_obj)
+    # print('generated_obj', generated_obj)
     eval_out.write(json.dumps(generated_obj) + '\n')
 
 
@@ -111,7 +143,7 @@ def single_worker_selfplay(mutable_model, immutable_model, mutable_sess,
   start_time = time.time()
   num_flips_for_initial_speaker = 2
   with tf.gfile.GFile(hparams.selfplay_eval_output_file, 'w') as selfplay_out:
-    print ('flip 1')
+    print('flip 1')
     for flip in range(num_flips_for_initial_speaker):
       # epoch = -1
       i = len(selfplay_data)  # force shuffling at the beginning
@@ -135,23 +167,22 @@ def single_worker_selfplay(mutable_model, immutable_model, mutable_sess,
 
         batch_data = selfplay_data[start_ind:end_ind]
         batch_kb = selfplay_kb[start_ind:end_ind]
-        # we indicaet to let agent1 to talk first. Keep in mind that we will
+        # we indicate to let agent1 to talk first. Keep in mind that we will
         # swap between agent1 and agent2.
         speaker = flip % 2
         generated_data, _, summary = dialogue.talk(hparams.max_dialogue_len,
                                                    batch_data, batch_kb, agent1,
                                                    agent2, worker_step,
-                                                   batch_size, speaker)
+                                                   end_ind - start_ind, speaker)
         output_generated_data(generated_data, selfplay_out)
         all_summary.append(summary)
         # number of elements processed
         summary_weight.append(end_ind - start_ind)
         worker_step += 1
-        # i += batch_size
   handle_summary(dialogue_mode, summary_writer, global_step, all_summary,
                  summary_weight)
   end_time = time.time()
-  print ('finished')
+  print('finished')
   utils.add_summary(summary_writer, global_step, dialogue_mode + '_time',
                     end_time - start_time)  #  step wise summary
 
@@ -251,7 +282,7 @@ def self_play_eval_fn(hparams,
       # if eval_forever is disabled, we will do one selfplay evalation
       # otherwise, we will wait until certain number of timesteps are elapsed.
       last_external_eval_step = global_step
-      print ('do single worker evaluation')
+      print('do single worker evaluation')
       single_worker_selfplay(mutable_model, immutable_model, mutable_sess,
                              immutable_sess, hparams.self_play_eval_data,
                              hparams.self_play_eval_kb, global_step, hparams,
@@ -370,7 +401,7 @@ def multi_worker_selfplay(hparams,
 
   # save first model
   if is_chief:
-    print('saveing the first checkpoint to', hparams.out_dir)
+    print('saving the first checkpoint to', hparams.out_dir)
     mutable_model.model.saver.save(
         mutable_sess,
         os.path.join(hparams.out_dir, 'dialogue.ckpt'),
@@ -404,7 +435,7 @@ def multi_worker_selfplay(hparams,
   # this is the start point of the self-play data. force shuffling at the beginning
   i = len(selfplay_data)
   train_stats = [0, 0]
-  while global_step < hparams.num_self_play_train_steps:
+  while global_step < hparams.num_self_play_train_steps + hparams.num_train_steps:
     # a. reload immutable model, muttable will be automated managed by supervisor
     if immutable_model_reload_freq > 0 and global_step - last_immmutable_model_reload > immutable_model_reload_freq:
       immutable_model, immutable_sess = load_self_play_model(
@@ -429,8 +460,8 @@ def multi_worker_selfplay(hparams,
     batch_data, batch_kb = selfplay_data[start_ind:end_ind], selfplay_kb[
         start_ind:end_ind]
     train_example, _, _ = dialogue.talk(hparams.max_dialogue_len, batch_data,
-                                        batch_kb, agent1, agent2, batch_size,
-                                        global_step)
+                                        batch_kb, agent1, agent2, global_step,
+                                        batch_size)
     possible_global_step = dialogue.maybe_train(
         train_example, mutable_agent_index, global_step, force=True)
     if possible_global_step:

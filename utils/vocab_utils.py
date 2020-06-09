@@ -20,8 +20,7 @@
 
 import codecs
 import tensorflow.compat.v1 as tf
-
-from tf.python.ops import lookup_ops
+from tensorflow.compat.v1.lookup import StaticHashTable, TextFileInitializer
 
 UNK = "<unk>"
 UNK_ID = 0
@@ -40,5 +39,19 @@ def get_vocab_size(vocab_file):
 
 
 def create_vocab_tables(vocab_file):
-  """Creates vocab tables for src_vocab_file and tgt_vocab_file."""
-  return lookup_ops.index_table_from_file(vocab_file, default_value=UNK_ID)
+  """Creates vocab tables: string > id, then id > string"""
+  token_to_id = StaticHashTable(
+          TextFileInitializer(vocab_file,
+              tf.string,
+              tf.lookup.TextFileIndex.WHOLE_LINE,
+              tf.int64,
+              tf.lookup.TextFileIndex.LINE_NUMBER,
+              delimiter=" "), UNK_ID)
+  id_to_token = StaticHashTable(
+          TextFileInitializer(vocab_file,
+              tf.int64,
+              tf.lookup.TextFileIndex.LINE_NUMBER,
+              tf.string,
+              tf.lookup.TextFileIndex.WHOLE_LINE,
+              delimiter=" "), UNK)
+  return (token_to_id, id_to_token)

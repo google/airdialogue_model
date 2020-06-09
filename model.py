@@ -14,7 +14,7 @@
 
 """Main module for the dialogue generation model."""
 import tensorflow.compat.v1 as tf
-from tf.python.layers import core as layers_core
+from tensorflow.compat.v1 import layers
 import model_helper
 from build_graph import build_graph
 from utils import dialogue_utils
@@ -60,26 +60,26 @@ class Model(object):
     # Projection
     with tf.variable_scope(scope or "build_network"):
       with tf.variable_scope("decoder/output_projection"):
-        self.output_layer1 = layers_core.Dense(
+        self.output_layer1 = layers.Dense(
             hparams.vocab_size, use_bias=False, name="output_projection_1")
-        self.output_layer2 = layers_core.Dense(
+        self.output_layer2 = layers.Dense(
             hparams.vocab_size, use_bias=False, name="output_projection_2")
-        self.output_layer_action = layers_core.Dense(
+        self.output_layer_action = layers.Dense(
             hparams.vocab_size, use_bias=False, name="output_projection_action")
-        self.vn_project11 = layers_core.Dense(
+        self.vn_project11 = layers.Dense(
             hparams.unit_value_network, use_bias=False, name="vn_project_11")
-        self.vn_project12 = layers_core.Dense(
+        self.vn_project12 = layers.Dense(
             hparams.unit_value_network, use_bias=False, name="vn_project_12")
-        self.vn_project21 = layers_core.Dense(
+        self.vn_project21 = layers.Dense(
             hparams.unit_value_network, use_bias=False, name="vn_project_21")
-        self.vn_project22 = layers_core.Dense(
+        self.vn_project22 = layers.Dense(
             hparams.unit_value_network, use_bias=False, name="vn_project_22")
 
     ## Train graph
     sl_loss, sl_loss_arr, rl_loss_arr, sample_id_arr_train, sample_id_arr_infer = build_graph(
         self, hparams, scope=scope)
 
-    if self.mode == tf.contrib.learn.ModeKeys.TRAIN:
+    if self.mode == tf.estimator.ModeKeys.TRAIN:
       self.train_loss = sl_loss
       self.all_train_loss = sl_loss_arr
       self.word_count = tf.reduce_sum(self.iterator.dialogue_len)
@@ -91,9 +91,9 @@ class Model(object):
         element_infer = self.sample_ids_arr[i]
         element_src = source[0]
         # element_src=0
-        src = reverse_vocab_table.lookup(tf.to_int64(element_src))
+        src = reverse_vocab_table.lookup(tf.cast(element_src, tf.int64))
         infer = reverse_vocab_table.lookup(
-            tf.to_int64(element_infer)
+            tf.cast(element_infer, tf.int64)
         )[0]  # src can only get the first one so I only get the first inference
         if i == 0:
           self.sample_words_arr1.append((tf.constant(i), src, infer))
@@ -101,31 +101,31 @@ class Model(object):
           self.sample_words_arr2.append((tf.constant(i), src, infer))
       self.vl1, self.vl2, self.pl1, self.pl2, self.eq11, self.eq12, self.eq2 = rl_loss_arr  # reinforcement updates
 
-    elif self.mode == tf.contrib.learn.ModeKeys.EVAL:
+    elif self.mode == tf.estimator.ModeKeys.EVAL:
       self.eval_loss = sl_loss
       self.all_eval_loss = sl_loss_arr
 
-    elif self.mode == tf.contrib.learn.ModeKeys.INFER:
+    elif self.mode == tf.estimator.ModeKeys.PREDICT:
       self.sample_ids_arr = sample_id_arr_infer
       self.sample_words_arr = []
-      self.source = reverse_vocab_table.lookup(tf.to_int64(iterator.source))
+      self.source = reverse_vocab_table.lookup(tf.cast(iterator.source, tf.int64))
       for element in self.sample_ids_arr:
         self.sample_words_arr.append(
-            reverse_vocab_table.lookup(tf.to_int64(element)))
+            reverse_vocab_table.lookup(tf.cast(element, tf.int64)))
     elif self.mode in dialogue_utils.self_play_modes:
       #### self play
       self.train_loss = sl_loss
       self.all_train_loss = sl_loss_arr
       self.selfplay_agent_1_utt = reverse_vocab_table.lookup(
-          tf.to_int64(sample_id_arr_infer[0]))
+          tf.cast(sample_id_arr_infer[0], tf.int64))
       self.selfplay_agent_2_utt = reverse_vocab_table.lookup(
-          tf.to_int64(sample_id_arr_infer[1]))
+          tf.cast(sample_id_arr_infer[1], tf.int64))
       self.selfplay_action = reverse_vocab_table.lookup(
-          tf.to_int64(sample_id_arr_infer[2]))
+          tf.cast(sample_id_arr_infer[2], tf.int64))
       if self.mode == dialogue_utils.mode_self_play_mutable:
         self.vl1, self.vl2, self.pl1, self.pl2, self.eq11, self.eq12, self.eq2 = rl_loss_arr  # reinforcement updates
 
-    if self.mode != tf.contrib.learn.ModeKeys.INFER:
+    if self.mode != tf.estimator.ModeKeys.PREDICT:
       ## Count the number of predicted words for compute ppl.
       self.predict_count = tf.reduce_sum(self.iterator.dialogue_len)
 
@@ -144,10 +144,10 @@ class Model(object):
 
     # Gradients and SGD update operation for training the model.
     # Arrage for the embedding vars to appear at the beginning.
-    if self.mode == tf.contrib.learn.ModeKeys.TRAIN or self.mode == dialogue_utils.mode_self_play_mutable:
+    if self.mode == tf.estimator.ModeKeys.TRAIN or self.mode == dialogue_utils.mode_self_play_mutable:
       self.learning_rate = tf.constant(hparams.learning_rate)
 
-      inv_decay = warmup_factor**(tf.to_float(warmup_steps - self.global_step))
+      inv_decay = warmup_factor**(tf.cast(warmup_steps - self.global_step, tf.float32))
       self.learning_rate = tf.cond(
           self.global_step < hparams.learning_rate_warmup_steps,
           lambda: inv_decay * self.learning_rate,
@@ -195,7 +195,7 @@ class Model(object):
       ] + gradient_norm_summary)
 
     # second part of the learning rate
-    if self.mode == tf.contrib.learn.ModeKeys.TRAIN or self.mode == dialogue_utils.mode_self_play_mutable:
+    if self.mode == tf.estimator.ModeKeys.TRAIN or self.mode == dialogue_utils.mode_self_play_mutable:
       self.learning_rate2 = tf.constant(hparams.learning_rate2)
       self.learning_rate3 = tf.constant(hparams.learning_rate3)
       if hparams.optimizer == "sgd":
@@ -348,7 +348,7 @@ class Model(object):
 
   def train(self, sess, iterator_handle):
     """supervised learning train step."""
-    assert self.mode == tf.contrib.learn.ModeKeys.TRAIN
+    assert self.mode == tf.estimator.ModeKeys.TRAIN
     summaries = {
         "train_dialogue_loss1": self.all_train_loss[0],
         "train_dialogue_loss2": self.all_train_loss[1],
@@ -385,7 +385,7 @@ class Model(object):
 
   def eval(self, sess, iterator_handle):
     """eval step."""
-    assert self.mode == tf.contrib.learn.ModeKeys.EVAL
+    assert self.mode == tf.estimator.ModeKeys.EVAL
     summaries = {
         "eval_dialogue_loss1": self.all_eval_loss[0],
         "eval_dialogue_loss2": self.all_eval_loss[1],

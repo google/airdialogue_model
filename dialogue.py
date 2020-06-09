@@ -18,7 +18,7 @@
 import math
 import sys
 import numpy as np
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 from utils import dialogue_utils
 from utils import misc_utils as utils
 
@@ -81,6 +81,7 @@ class Conversation(object):
       new_utterances = []
       for token in np_utterance:
         new_utterances.append(token)
+      new_utterances = list(map(lambda bs: bs.decode(), new_utterances))
       # 1. get sub_str before begin_tokens as they are invalid
       new_utterances, _ = apply_filter(begin_token, new_utterances)
       # 2. get sub_str before end token
@@ -99,7 +100,7 @@ class Conversation(object):
         new_utterances.append('<eod>')
 
       if terminated or last_round:
-        self.action_arr[i] = ac
+        self.action_arr[i] = [s.decode() for s in ac]
         self.is_finished[i] = True
         # 7. add end token
       new_utterances.append(end_token)
@@ -142,7 +143,7 @@ class SelfplayDialogue(object):
 
     self.summary_writer = summary_writer
     self.dialogue_mode = dialogue_mode
-    # self.batch_size = hparams.self_play_batch_size
+    self.batch_size = hparams.self_play_batch_size
     self.self_play_eval_batch_size = hparams.self_play_eval_batch_size
     self.update_batch_size = hparams.self_play_update_batch_size
     self.hparams = hparams
@@ -333,7 +334,7 @@ class SelfplayDialogue(object):
       end_position = get_end_token(i + 1, set_of_end_tokens, splitted_dialogue)
       assert splitted_dialogue[end_position] != start_token, (
           'start token '
-          'appeared twice') + ' '.join(flat_dialogue)
+          'appeared twice') + ''.join(flat_dialogue)
       all_starts.append(i)
       all_ends.append(end_position)
       i = get_next_start_token(i + 1, start_token, splitted_dialogue)
@@ -475,7 +476,7 @@ class SelfplayDialogue(object):
   def flip_agent(self, mutable_agent, immutable_agent, flip='random'):
     """This function flips the role of mutable agent and immutable agent so that
 
-    they both have chanes to play customer and agent. Remember both mutable
+    they both have chances to play customer and agent. Remember both mutable
     immutable models actually contain two sub-models: customer and agent. We
     need to make sure that they have equal chances to serve as both parts when
     doing the self play. In self play evaluation, this is chosen

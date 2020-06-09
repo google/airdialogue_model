@@ -22,6 +22,7 @@ training/evaluation tasks.
 import collections
 from functools import partial
 import tensorflow.compat.v1 as tf
+from tensorflow import contrib
 
 # len_action = 3
 class BatchedInput(
@@ -141,7 +142,7 @@ def process_entry_infer(intent, dialogue_context, kb, vocab_table):
 
 def get_sub_items_supervised(data, kb):
   """process procedure for supervised learning."""
-  all_data = tf.string_split([data], delimiter="|").values
+  all_data = tf.string_split([data], sep="|").values
   intent, action, dialogue, boundaries = all_data[0], all_data[1], all_data[
       2], all_data[3]
   return intent, action, dialogue, boundaries, kb
@@ -149,14 +150,14 @@ def get_sub_items_supervised(data, kb):
 
 def get_sub_items_infer(data, kb):
   """process procedure for inference."""
-  all_data = tf.string_split([data], delimiter="|").values
+  all_data = tf.string_split([data], sep="|").values
   intent, dialogue_context = all_data[0], all_data[1]
   return intent, dialogue_context, kb
 
 
 def get_sub_items_self_play(data, kb):
   """process procedure for self play."""
-  all_data = tf.string_split([data], delimiter="|", skip_empty=False).values
+  all_data = tf.string_split([data], sep="|", skip_empty=False).values
   # action is empty for self-play inference
   intent, pred_action, truth_action, utterance, boundary, reward_diag, reward_action = all_data[
       0], all_data[1], all_data[2], all_data[3], all_data[4], all_data[
@@ -242,9 +243,8 @@ def get_infer_iterator(dataset_data,
 
   batched_dataset = batching_func(combined_dataset)
 
-  batched_iter = batched_dataset.make_initializable_iterator()
+  batched_iter = tf.data.make_initializable_iterator(batched_dataset)
   return batched_iter
-
 
 def get_iterator(dataset_data,
                  dataset_kb,
@@ -336,13 +336,13 @@ def get_iterator(dataset_data,
       return batching_func(windowed_data)
 
     batched_dataset = combined_dataset.apply(
-        tf.contrib.data.group_by_window(
+        contrib.data.group_by_window(
             key_func=key_func, reduce_func=reduce_func, window_size=batch_size))
 
   else:
     batched_dataset = batching_func(combined_dataset)
 
-  batched_iter = batched_dataset.make_initializable_iterator()
+  batched_iter = tf.data.make_initializable_iterator(batched_dataset)
   return batched_iter
 
 
