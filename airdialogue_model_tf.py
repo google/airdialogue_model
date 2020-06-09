@@ -21,7 +21,8 @@ import os
 import random
 import sys
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+import tensorflow.contrib as contrib
 import inference
 import self_play
 import train
@@ -523,7 +524,7 @@ def add_arguments(parser):
 
 def create_hparams(flags):
   """Create training hparams."""
-  return tf.contrib.training.HParams(
+  return contrib.training.HParams(
       # Data
       input_dir=flags.input_dir,
       out_dir=flags.out_dir,
