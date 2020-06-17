@@ -16,6 +16,7 @@
 
 import codecs
 import random
+import re
 import numpy as np
 import tensorflow.compat.v1 as tf
 from airdialogue.evaluator.metrics import f1
@@ -217,7 +218,7 @@ def decode_and_evaluate(name,
       trans_f.write('')  # Write empty string to ensure file is created.
       while True:
         try:
-          ut1, ut2, _ = model.generate_infer_utterance(sess,
+          ut1, ut2, action = model.generate_infer_utterance(sess,
                                                        data_iterator_handle)
           batch_size = ut1.shape[0]
           for sent_id in range(batch_size):
@@ -226,7 +227,19 @@ def decode_and_evaluate(name,
             nmt_outputs = [ut1, ut2][speaker]
             translation = get_translation_cut_both(nmt_outputs, sent_id,
                                                    hparams.t1.encode(), hparams.t2.encode())
-            trans_f.write((translation + b'\n').decode('utf-8'))
+            translation = translation.decode('utf-8')
+            if hparams.self_play_start_turn == 'agent':
+              if '<eod>' in translation:
+                ac_arr = [w.decode('utf-8') for w in action[sent_id]]
+                name = ac_arr[0] + ' ' + ac_arr[1]
+                flight = re.match(r'<fl_(\d+)>', ac_arr[2])
+                flight = flight.group(1) if flight else ''
+                status = re.match(r'<st_(\w+)>', ac_arr[3])
+                status = status.group(1) if status else ''
+                translation += '|' + '|'.join([name, flight, status])
+              else:
+                translation += '|||'
+            trans_f.write(translation + '\n')
             cnt += 1
           if last_cnt - cnt >= 10000:  # 400k in total
             utils.print_out('cnt= ' + str(cnt))

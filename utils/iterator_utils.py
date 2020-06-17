@@ -150,7 +150,7 @@ def get_sub_items_supervised(data, kb):
 
 def get_sub_items_infer(data, kb):
   """process procedure for inference."""
-  all_data = tf.string_split([data], sep="|").values
+  all_data = tf.string_split([data], sep="|", skip_empty=False).values
   intent, dialogue_context = all_data[0], all_data[1]
   return intent, dialogue_context, kb
 

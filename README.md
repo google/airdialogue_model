@@ -68,8 +68,8 @@ Once the predictative files are generated, we will depend on the [AirDialogue to
 We are currently working on the scoring script.
 ```
 airdialogue score --pred_data ./data/out_dir/dev_inference_out.txt \
-                  --true_data ./data/airdialogue/json/dev_data.json \
-                  --true_kb ./data/airdialogue/json/dev_kb.json \
+                  --true_data ./data/airdialogue/tokenized/dev.infer.tar.data \
+                  --true_kb ./data/airdialogue/tokenied/dev.infer.kb \
                   --task infer \
                   --output ./data/out_dir/dev_bleu.json
 ```
@@ -155,8 +155,8 @@ bash ./scripts/evaluate.sh -p dev -a ood1 -m ./data/synthesized_out_dir -o ./dat
 ###### Scoring
 ```
 airdialogue score --pred_data ./data/synthesized_out_dir/dev_inference_out.txt \
-                  --true_data ./data/synthesized/json/dev_data.json \
-                  --true_kb ./data/airdialogue/json/dev_kb.json \
+                  --true_data ./data/synthesized/tokenized/dev.infer.tar.data \
+                  --true_kb ./data/airdialogue/tokenized/dev.infer.kb \
                   --task infer \
                   --output ./data/synthesized_out_dir/dev_bleu.json
 ```

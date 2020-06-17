@@ -359,6 +359,11 @@ def add_arguments(parser):
       default=50,
       help="maximum sentence length for dialogue inference")
   parser.add_argument(
+      "--self_play_start_turn",
+      type=str,
+      default=None,
+      help="Force self-play to run for an agent/customer start. [agent | customer]")
+  parser.add_argument(
       "--num_kb_fields_per_entry",
       type=int,
       default=13,
@@ -592,6 +597,7 @@ def create_hparams(flags):
       vocab_file=flags.vocab_file,
       max_dialogue_len=flags.max_dialogue_len,
       max_inference_len=flags.max_inference_len,
+      self_play_start_turn=flags.self_play_start_turn,
       num_kb_fields_per_entry=flags.num_kb_fields_per_entry,
       len_action=flags.len_action,
       # selfplay
