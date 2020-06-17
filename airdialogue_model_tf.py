@@ -11,9 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """This file is the main entry for the airdialogue model."""
-
 
 import argparse
 from functools import partial
@@ -68,12 +66,10 @@ def add_arguments(parser):
       "--train_reward_type",
       type=str,
       default="scaled",
-      help="which reward type to use when training. scaled|discrete|combined|extreme")
+      help="which reward type to use when training. scaled|discrete|combined|extreme"
+  )
   parser.add_argument(
-      "--identity",
-      type=str,
-      default="",
-      help="The identity of the instance")
+      "--identity", type=str, default="", help="The identity of the instance")
   parser.add_argument(
       "--num_units",
       type=int,
@@ -268,10 +264,7 @@ def add_arguments(parser):
       default=None,
       help="dialogue data from train set")
   parser.add_argument(
-      "--train_kb",
-      type=str,
-      default=None,
-      help="kb from train set")
+      "--train_kb", type=str, default=None, help="kb from train set")
   # selfplay train
   parser.add_argument(
       "--self_play_train_data",
@@ -290,10 +283,7 @@ def add_arguments(parser):
       default=None,
       help="dialogue data from dev set for evaluation")
   parser.add_argument(
-      "--dev_kb",
-      type=str,
-      default=None,
-      help="kb from dev set for evaluation")
+      "--dev_kb", type=str, default=None, help="kb from dev set for evaluation")
   parser.add_argument(
       "--infer_src_data",
       type=str,
@@ -308,13 +298,9 @@ def add_arguments(parser):
       "--codalab",
       action="store_true",
       help="""Indicates if working with Codalab workflow. Generally decreases
-        unecessary steps (like self inference scoring)"""
-  )
+        unecessary steps (like self inference scoring)""")
   parser.add_argument(
-      "--infer_kb",
-      type=str,
-      default=None,
-      help="kb for inference")
+      "--infer_kb", type=str, default=None, help="kb for inference")
   parser.add_argument(
       "--self_play_eval_data",
       type=str,
@@ -326,10 +312,7 @@ def add_arguments(parser):
       default=None,
       help="kb for self-play evaluation")
   parser.add_argument(
-      "--vocab_file",
-      type=str,
-      default=None,
-      help="vocabulary file")
+      "--vocab_file", type=str, default=None, help="vocabulary file")
   parser.add_argument(
       "--inference_output_file",
       type=str,
@@ -359,6 +342,12 @@ def add_arguments(parser):
       default=50,
       help="maximum sentence length for dialogue inference")
   parser.add_argument(
+      "--self_play_start_turn",
+      type=str,
+      default=None,
+      help="Force self-play to run for an agent/customer start. [agent | customer]"
+  )
+  parser.add_argument(
       "--num_kb_fields_per_entry",
       type=int,
       default=13,
@@ -373,15 +362,13 @@ def add_arguments(parser):
       "--self_play_pretrain_dir",
       type=str,
       default=None,
-      help=
-      "the directory for a pre-trained model used to initialize self-play. This is usually the supervised learning model."
+      help="the directory for a pre-trained model used to initialize self-play. This is usually the supervised learning model."
   )
   parser.add_argument(
       "--max_dialogue_turns",
       type=int,
       default=50,
-      help=
-      "The maximum number of turns that a dialogue would take to terminal. When conducting self-play, this is the maximum number of turns we expect the dialogue to reach an end-of-dialogue token."
+      help="The maximum number of turns that a dialogue would take to terminal. When conducting self-play, this is the maximum number of turns we expect the dialogue to reach an end-of-dialogue token."
   )
   parser.add_argument(
       "--train_threadhold",
@@ -399,8 +386,7 @@ def add_arguments(parser):
       "--task_type",
       type=str,
       default=task_TRAINEVAL,
-      help=
-      "the type of the task that is being conducted. It has to be one of TRAINEVAL|INFER|SP_EVAL|SP_DISTRIBUTED"
+      help="the type of the task that is being conducted. It has to be one of TRAINEVAL|INFER|SP_EVAL|SP_DISTRIBUTED"
   )
   parser.add_argument(
       "--self_play_batch_size",
@@ -496,29 +482,25 @@ def add_arguments(parser):
       "--learning_rate2",
       type=float,
       default=0.001,
-      help=
-      "Learning rate for the first speaker when doing self-play updates. Adam: 0.001 | 0.0001"
+      help="Learning rate for the first speaker when doing self-play updates. Adam: 0.001 | 0.0001"
   )
   parser.add_argument(
       "--learning_rate3",
       type=float,
       default=0.001,
-      help=
-      "Learning rate for the second speaker when doing self-play updates. Adam: 0.001 | 0.0001"
+      help="Learning rate for the second speaker when doing self-play updates. Adam: 0.001 | 0.0001"
   )
   parser.add_argument(
       "--max_gradient_norm2",
       type=float,
       default=1,
-      help=
-      "gradient norm for the policy network of the first speaker when doing self-play updates"
+      help="gradient norm for the policy network of the first speaker when doing self-play updates"
   )
   parser.add_argument(
       "--max_gradient_norm3",
       type=float,
       default=1,
-      help=
-      "gradient norm for the policy network of the second speaker when doing self-play updates"
+      help="gradient norm for the policy network of the second speaker when doing self-play updates"
   )
 
 
@@ -592,6 +574,7 @@ def create_hparams(flags):
       vocab_file=flags.vocab_file,
       max_dialogue_len=flags.max_dialogue_len,
       max_inference_len=flags.max_inference_len,
+      self_play_start_turn=flags.self_play_start_turn,
       num_kb_fields_per_entry=flags.num_kb_fields_per_entry,
       len_action=flags.len_action,
       # selfplay
@@ -627,8 +610,7 @@ def create_hparams(flags):
       rl_training=flags.rl_training,
       # others
       identity=flags.identity,
-      eval_forever=flags.eval_forever
-      )
+      eval_forever=flags.eval_forever)
 
 
 def process_input_path(hparams):
@@ -641,10 +623,10 @@ def process_input_path(hparams):
       hparams.train_kb = os.path.join(hparams.input_dir, "train.kb")
     if not hparams.self_play_train_data:
       hparams.self_play_train_data = os.path.join(hparams.input_dir,
-              "train.selfplay.data")
+                                                  "train.selfplay.data")
     if not hparams.self_play_train_kb:
       hparams.self_play_train_kb = os.path.join(hparams.input_dir,
-              "train.selfplay.kb")
+                                                "train.selfplay.kb")
     # dev
     if not hparams.dev_data:
       hparams.dev_data = os.path.join(hparams.input_dir, "dev.eval.data")
@@ -656,27 +638,28 @@ def process_input_path(hparams):
     if hparams.task_type == task_INFER:
       if not hparams.infer_src_data:
         hparams.infer_src_data = os.path.join(
-                hparams.input_dir, hparams.eval_prefix + ".infer.src.data")
+            hparams.input_dir, hparams.eval_prefix + ".infer.src.data")
       if not hparams.infer_tar_data:
         hparams.infer_tar_data = os.path.join(
-                hparams.input_dir, hparams.eval_prefix + ".infer.tar.data")
+            hparams.input_dir, hparams.eval_prefix + ".infer.tar.data")
       if not hparams.infer_kb:
         hparams.infer_kb = os.path.join(hparams.input_dir,
-                hparams.eval_prefix + ".infer.kb")
+                                        hparams.eval_prefix + ".infer.kb")
     if hparams.task_type == task_SP_EVAL:
-        if not (hparams.self_play_eval_data and hparams.self_play_eval_kb):
-            hparams.self_play_eval_data = os.path.join(
-                hparams.input_dir, hparams.eval_prefix + ".selfplay.eval.data")
-            hparams.self_play_eval_kb = os.path.join(
-                hparams.input_dir, hparams.eval_prefix + ".selfplay.eval.kb")
+      if not (hparams.self_play_eval_data and hparams.self_play_eval_kb):
+        hparams.self_play_eval_data = os.path.join(
+            hparams.input_dir, hparams.eval_prefix + ".selfplay.eval.data")
+        hparams.self_play_eval_kb = os.path.join(
+            hparams.input_dir, hparams.eval_prefix + ".selfplay.eval.kb")
   if hparams.codalab:
     hparams.infer_tar_data = None
   if hparams.task_type == task_INFER and (not hparams.inference_output_file):
     hparams.inference_output_file = os.path.join(hparams.out_dir,
                                                  "inference_out.txt")
-  if hparams.task_type == task_SP_EVAL and (not hparams.selfplay_eval_output_file):
+  if hparams.task_type == task_SP_EVAL and (
+      not hparams.selfplay_eval_output_file):
     hparams.selfplay_eval_output_file = os.path.join(hparams.out_dir,
-                                                 "selfplay_eval_out.txt")
+                                                     "selfplay_eval_out.txt")
 
   # set flags for tensorboard on infer and selfplay eval tasks
   if (not hparams.identity) and hparams.task_type in [task_SP_EVAL, task_INFER]:
@@ -723,7 +706,9 @@ def extend_hparams(hparams):
 
 
 def ensure_compatible_hparams(hparams, default_hparams, hparams_path):
-  """Make sure the loaded hparams is compatible with new changes. For
+  """Make sure the loaded hparams is compatible with new changes.
+
+  For
   compatible reason, if there are new fields in default_hparams, we add
   them to the current hparams.
   """
@@ -762,8 +747,8 @@ def ensure_compatible_hparams(hparams, default_hparams, hparams_path):
   for key in updated_keys:
     if key in default_config and getattr(hparams, key) != default_config[key]:
       utils.print_out(
-          "# Updating hparams.%s: %s -> %s" % (key, str(getattr(hparams, key)),
-                                               str(default_config[key])))
+          "# Updating hparams.%s: %s -> %s" %
+          (key, str(getattr(hparams, key)), str(default_config[key])))
       setattr(hparams, key, default_config[key])
   return hparams
 
@@ -818,6 +803,7 @@ def load_hparams(flags, default_hparams, save_hparams):
   hparams = create_or_load_hparams(
       load_dir, default_hparams, flags.hparams_path, save_hparams=save_hparams)
   return hparams
+
 
 def main_simple(unused_argv):
   flags = FLAGS

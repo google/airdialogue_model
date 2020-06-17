@@ -63,9 +63,9 @@ echo "out_dir", ${out_dir}
 echo "num_gpus", ${num_gpus}
 
 # run in foreground once and display the results
-# python airdialogue_model_tf.py --task_type INFER --eval_prefix $partition --num_gpus $num_gpus \
-#                       --input_dir ${input_dir} --out_dir ${out_dir} \
-#                       --inference_output_file ${out_dir}/dev_inference_out.txt
+python airdialogue_model_tf.py --task_type INFER --eval_prefix $partition --num_gpus $num_gpus \
+                      --input_dir ${input_dir} --out_dir ${out_dir} \
+                      --inference_output_file ${out_dir}/dev_inference_out.txt
 
 # run in foreground once and display the results
 python airdialogue_model_tf.py --task_type SP_EVAL --eval_prefix $partition --num_gpus $num_gpus \

@@ -11,27 +11,29 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Contains iterators for training, evaluating and inference on the dialogue models.
 
-"""Contains iterators for training, evaluating and inference on the dialogue
-models. There are two iterator generators: get_infer_iterator applies to
+There are two iterator generators: get_infer_iterator applies to
 inference and self play tasks while get_iterator applies to supervised
 training/evaluation tasks.
 """
-
 
 import collections
 from functools import partial
 import tensorflow.compat.v1 as tf
 from tensorflow import contrib
 
+
 # len_action = 3
 class BatchedInput(
-    collections.namedtuple(
-        "BatchedInput", ("initializer", "intent", "intent_len", "source",
-                         "target", "dialogue_len", "action", "action_len",
-                         "predicted_action", "reward_diag", "reward_action",
-                         "kb", "has_reservation", "mask1", "mask2", "turns"))):
+    collections.namedtuple("BatchedInput",
+                           ("initializer", "intent", "intent_len", "source",
+                            "target", "dialogue_len", "action", "action_len",
+                            "predicted_action", "reward_diag", "reward_action",
+                            "kb", "has_reservation", "mask1", "mask2", "turns"))
+):
   pass
+
 
 def process_data(object_str, vocab_table):
   """prelinminary process of dialogue data."""
@@ -51,8 +53,8 @@ def process_entry_common(intent, action, dialogue, boundaries, kb, vocab_table,
                          t1_id, t2_id):
   """A common procedure to process each entry of the dialogue data."""
 
-  def do_process_boundary(start_points, end_points, input_length,
-                          t1_id, t2_id, all_tokenized_diag):
+  def do_process_boundary(start_points, end_points, input_length, t1_id, t2_id,
+                          all_tokenized_diag):
     """function that contains the majority of the logic to proess boundary."""
     masks_start = tf.sequence_mask(start_points, input_length)
     masks_end = tf.sequence_mask(end_points, input_length)
@@ -71,8 +73,8 @@ def process_entry_common(intent, action, dialogue, boundaries, kb, vocab_table,
     points_val = tf.string_to_number(points, out_type=tf.int32)
     siz = tf.size(points_val) // 2
     start_points, end_points = points_val[0:siz], points_val[siz:]
-    return do_process_boundary(start_points, end_points,
-                               input_length, t1_id, t2_id, all_dialogue)
+    return do_process_boundary(start_points, end_points, input_length, t1_id,
+                               t2_id, all_dialogue)
 
   def process_dialogue(tensor_dialogue, size_dialogue, mask1, mask2,
                        turn_point):
@@ -102,7 +104,9 @@ def process_entry_supervised(intent, action, dialogue, boundaries, kb,
   res = process_entry_common(intent, action, dialogue, boundaries, kb,
                              vocab_table, t1_id, t2_id)
   tensor_intent, size_intent, source_diag, target_diag, size_dialogue, tensor_action, size_action, tensor_kb, has_reservation, mask1, mask2, turn_point = res
-  return tensor_intent, size_intent, source_diag, target_diag, size_dialogue, tensor_action, size_action, tf.constant([0]), tf.constant([0.0]), tf.constant([0.0]), tensor_kb, has_reservation, mask1, mask2, turn_point
+  return tensor_intent, size_intent, source_diag, target_diag, size_dialogue, tensor_action, size_action, tf.constant(
+      [0]), tf.constant([0.0]), tf.constant(
+          [0.0]), tensor_kb, has_reservation, mask1, mask2, turn_point
 
 
 def process_entry_self_play(intent, action, truth_action, kb, utterance,
@@ -150,7 +154,7 @@ def get_sub_items_supervised(data, kb):
 
 def get_sub_items_infer(data, kb):
   """process procedure for inference."""
-  all_data = tf.string_split([data], sep="|").values
+  all_data = tf.string_split([data], sep="|", skip_empty=False).values
   intent, dialogue_context = all_data[0], all_data[1]
   return intent, dialogue_context, kb
 
@@ -191,7 +195,8 @@ def get_infer_iterator(dataset_data,
   # do not shuffle iterate on inference and self play mode
   # data is shuffled outside of iterator
   combined_dataset = combined_dataset.filter(
-      lambda data, kb: tf.logical_and(tf.size(data) > 0, tf.size(kb) > 0))
+      lambda data, kb: tf.logical_and(tf.size(data) > 0,
+                                      tf.size(kb) > 0))
 
   if not self_play:
     get_sub_fu = get_sub_items_infer
@@ -246,6 +251,7 @@ def get_infer_iterator(dataset_data,
   batched_iter = tf.data.make_initializable_iterator(batched_dataset)
   return batched_iter
 
+
 def get_iterator(dataset_data,
                  dataset_kb,
                  vocab_table,
@@ -276,7 +282,8 @@ def get_iterator(dataset_data,
 
   combined_dataset = combined_dataset.shuffle(output_buffer_size, random_seed)
   combined_dataset = combined_dataset.filter(
-      lambda data, kb: tf.logical_and(tf.size(data) > 0, tf.size(kb) > 0))
+      lambda data, kb: tf.logical_and(tf.size(data) > 0,
+                                      tf.size(kb) > 0))
 
   combined_dataset = combined_dataset.map(get_sub_items_supervised)
   combined_dataset = combined_dataset.map(
@@ -285,6 +292,7 @@ def get_iterator(dataset_data,
           vocab_table=vocab_table,
           t1_id=t1_id,
           t2_id=t2_id))
+
   def batching_func(x):
     return x.padded_batch(
         batch_size,

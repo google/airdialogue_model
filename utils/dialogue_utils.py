@@ -11,17 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Utility functions specifically for airdialogue model."""
 
 import codecs
 import random
+import re
 import numpy as np
 import tensorflow.compat.v1 as tf
+from airdialogue.evaluator import infer_utils
 from airdialogue.evaluator.metrics import f1
 from airdialogue.evaluator.metrics.flight_distance import generate_scaled_flight
 from airdialogue.evaluator.metrics.flight_distance import split_flight
-from airdialogue.evaluator import infer_utils
 
 from utils import misc_utils as utils
 from utils import vocab_utils
@@ -70,6 +70,7 @@ def compute_reward(predicted_action,
 
 def parse_action(action):
   """parse the action and consider multiple name scenario.
+
   name will also appear first.
   """
   name = ' '.join(action[0:-2])
@@ -107,6 +108,7 @@ def compute_01_score(predicted_action, actual_action):
   ds_total = 0.2 * ds1_name + 0.5 * ds2_flight + 0.3 * ds3_state
 
   return ds_total, ds1_name, ds2_flight, ds3_state
+
 
 def get_training_reward(hparams, s1, s2, s3, d1, d2, d3):
   """Calcualte the reward for training."""
@@ -175,8 +177,7 @@ def calculate_reward_metrics(batch_rewards):
 
 
 def extract_best_beam_response(response):
-  """Make sure outputs is of shape [batch_size, time]  when using beam search.
-  """
+  """Make sure outputs is of shape [batch_size, time]  when using beam search."""
   new_response = [
       extract_best_beam_single(response[0]),
       extract_best_beam_single(response[1]),
@@ -217,16 +218,29 @@ def decode_and_evaluate(name,
       trans_f.write('')  # Write empty string to ensure file is created.
       while True:
         try:
-          ut1, ut2, _ = model.generate_infer_utterance(sess,
-                                                       data_iterator_handle)
+          ut1, ut2, action = model.generate_infer_utterance(
+              sess, data_iterator_handle)
           batch_size = ut1.shape[0]
           for sent_id in range(batch_size):
             src = infer_src_data[cnt]
             speaker = get_speaker(src)
             nmt_outputs = [ut1, ut2][speaker]
             translation = get_translation_cut_both(nmt_outputs, sent_id,
-                                                   hparams.t1.encode(), hparams.t2.encode())
-            trans_f.write((translation + b'\n').decode('utf-8'))
+                                                   hparams.t1.encode(),
+                                                   hparams.t2.encode())
+            translation = translation.decode('utf-8')
+            if hparams.self_play_start_turn == 'agent':
+              if '<eod>' in translation:
+                ac_arr = [w.decode('utf-8') for w in action[sent_id]]
+                name = ac_arr[0] + ' ' + ac_arr[1]
+                flight = re.match(r'<fl_(\d+)>', ac_arr[2])
+                flight = flight.group(1) if flight else ''
+                status = re.match(r'<st_(\w+)>', ac_arr[3])
+                status = status.group(1) if status else ''
+                translation += '|' + '|'.join([name, flight, status])
+              else:
+                translation += '|||'
+            trans_f.write(translation + '\n')
             cnt += 1
           if last_cnt - cnt >= 10000:  # 400k in total
             utils.print_out('cnt= ' + str(cnt))
@@ -247,6 +261,7 @@ def decode_and_evaluate(name,
 
 def load_data(inference_input_file):
   """Load inference data.
+
   Note, dialogue context might contain multiple
   flights connected using underlines. e.g. flight1_flight2.
   """
